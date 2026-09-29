@@ -1,0 +1,11 @@
+# Opens pull requests when NuGet packages or GitHub Actions have updates (including security fixes).
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

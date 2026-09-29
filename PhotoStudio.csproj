@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>PhotoStudio</AssemblyName>
+    <RootNamespace>PhotoStudio</RootNamespace>
+    <Product>PhotoStudio</Product>
+    <Version>1.0.0</Version>
+    <Authors>Luca Pezzoli</Authors>
+    <Company>Luca Pezzoli</Company>
+    <Copyright>Copyright © 2026 Luca Pezzoli</Copyright>
+    <Description>Photo editor with RAW development, culling and AI-assisted editing.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <ApplicationIcon>Assets\PhotoStudio.ico</ApplicationIcon>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <!-- When publishing as a single file, bundle the LibRaw native DLL inside the exe. -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Anthropic" Version="12.50.0" />
+    <PackageReference Include="Sdcb.LibRaw" Version="0.21.1.7" />
+    <PackageReference Include="Sdcb.LibRaw.runtime.win64" Version="0.21.1" />
+  </ItemGroup>
+
+</Project>

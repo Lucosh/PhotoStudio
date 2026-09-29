@@ -1,0 +1,24 @@
+# Build output
+bin/
+obj/
+publish/
+artifacts/
+dist/
+
+# Visual Studio / Rider / VS Code user files
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userprefs
+
+# OS files
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Secrets: API keys are stored encrypted in %APPDATA%\PhotoStudio, never in the project
+*.pfx
+*.p12
+.env

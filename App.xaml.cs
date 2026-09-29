@@ -1,0 +1,33 @@
+using System.Windows;
+using System.Windows.Threading;
+
+namespace PhotoStudio
+{
+    public partial class App : Application
+    {
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            base.OnStartup(e);
+            DispatcherUnhandledException += OnUnhandledException;
+
+            var window = new MainWindow();
+            MainWindow = window;
+            window.Show();
+
+            foreach (var arg in e.Args)
+            {
+                if (System.IO.Directory.Exists(arg))
+                    Dispatcher.BeginInvoke(new System.Action(() => window.StartCulling(arg)));   // a folder: Preselezione
+                else
+                    window.OpenFile(arg);
+            }
+        }
+
+        void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            MessageBox.Show("Si è verificato un errore imprevisto:\n\n" + e.Exception.Message,
+                "PhotoStudio", MessageBoxButton.OK, MessageBoxImage.Error);
+            e.Handled = true;
+        }
+    }
+}
