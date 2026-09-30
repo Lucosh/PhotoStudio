@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Dialogs
 {
@@ -49,13 +50,13 @@ namespace PhotoStudio.Dialogs
                 Body.Children.Add(BuildRow(specs[i], i));
             }
 
-            var reset = new Button { Content = "Ripristina", MinWidth = 84 };
+            var reset = new Button { Content = T("Ripristina"), MinWidth = 84 };
             reset.Click += (s, e) => { foreach (var r in _resetters) r(); Changed(); };
             ButtonBar.Children.Insert(0, reset);
 
             if (preview != null)
             {
-                _previewBox = new CheckBox { Content = "Anteprima", IsChecked = true, Margin = new Thickness(0, 4, 0, 0) };
+                _previewBox = new CheckBox { Content = T("Anteprima"), IsChecked = true, Margin = new Thickness(0, 4, 0, 0) };
                 _previewBox.Checked += (s, e) => Changed();
                 _previewBox.Unchecked += (s, e) => _preview(null);
                 Body.Children.Add(_previewBox);

@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using Microsoft.Win32;
 using PhotoStudio.Core;
 using PhotoStudio.Dialogs;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio
 {
@@ -31,7 +32,7 @@ namespace PhotoStudio
         {
             if (folder == null)
             {
-                var dlg = new OpenFolderDialog { Title = "Scegli la cartella con le foto da selezionare" };
+                var dlg = new OpenFolderDialog { Title = T("Scegli la cartella con le foto da selezionare") };
                 if (_batchFolder != null && Directory.Exists(_batchFolder)) dlg.InitialDirectory = _batchFolder;
                 if (dlg.ShowDialog(this) != true) return;
                 folder = dlg.FolderName;
@@ -41,9 +42,8 @@ namespace PhotoStudio
             {
                 int total = state.Batch.Photos.Count, saved = state.Batch.Photos.Count(p => p.Saved);
                 var answer = MessageBox.Show(this,
-                    $"In questa cartella avevi lasciato a metà la modifica: {saved} di {total} foto salvate.\n\n" +
-                    "Sì: riprendi la modifica da dove eri rimasto\nNo: fai una nuova preselezione (stelle ed etichette restano)",
-                    "Riprendi il lavoro", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+                    T("In questa cartella avevi lasciato a metà la modifica: {0} di {1} foto salvate.\n\nSì: riprendi la modifica da dove eri rimasto\nNo: fai una nuova preselezione (stelle ed etichette restano)", saved, total),
+                    T("Riprendi il lavoro"), MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
                 if (answer == MessageBoxResult.Cancel) return;
                 if (answer == MessageBoxResult.Yes) { ResumeBatch(folder, state); return; }
             }
@@ -64,13 +64,13 @@ namespace PhotoStudio
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, $"Impossibile leggere la cartella:\n{folder}\n\n{ex.Message}", "Preselezione", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, T("Impossibile leggere la cartella:\n{0}\n\n{1}", folder, ex.Message), T("Preselezione"), MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             if (photos.Count == 0)
             {
-                MessageBox.Show(this, $"Nella cartella non ci sono foto:\n{folder}\n\nFormati riconosciuti: JPEG, PNG, TIFF, HEIC e RAW (CR2, CR3, NEF, ARW, DNG...).",
-                    "Preselezione", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, T("Nella cartella non ci sono foto:\n{0}\n\nFormati riconosciuti: JPEG, PNG, TIFF, HEIC e RAW (CR2, CR3, NEF, ARW, DNG...).", folder),
+                    T("Preselezione"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             RunCulling(folder, photos, state);
@@ -97,15 +97,15 @@ namespace PhotoStudio
             state.ApplyMarks(photos);
             var window = new CullingWindow(this, folder, photos, state);
             bool ok = window.ShowDialog() == true && window.Kept.Count > 0;
-            string deleted = window.DeletedCount == 1 ? "1 foto spostata nel Cestino" : window.DeletedCount > 1 ? $"{window.DeletedCount} foto spostate nel Cestino" : "";
+            string deleted = window.DeletedCount == 1 ? T("1 foto spostata nel Cestino") : window.DeletedCount > 1 ? T("{0} foto spostate nel Cestino", window.DeletedCount) : "";
             if (!ok)
             {
-                Status(deleted.Length > 0 ? "Preselezione: " + deleted + "." : "");
+                Status(deleted.Length > 0 ? T("Preselezione: {0}.", deleted) : "");
                 return;
             }
             foreach (var p in window.Kept) { p.Session = null; p.OutputPath = null; p.State = PhotoState.Pending; p.Settings = null; }
             StartBatch(folder, window.Kept, window.OutputFolder, state);
-            Status($"Preselezione completata: {window.Kept.Count} foto da modificare" + (deleted.Length > 0 ? ", " + deleted + "." : "."));
+            Status(T("Preselezione completata: {0} foto da modificare{1}", window.Kept.Count, (deleted.Length > 0 ? ", " + deleted + "." : ".")));
         }
 
         /// <summary>Reopens the editing left half-way in this folder (saved photos, settings and output folder).</summary>
@@ -126,8 +126,8 @@ namespace PhotoStudio
             }
             if (photos.Count == 0) { StartCulling(folder); return; }
             state.ApplyMarks(photos);
-            StartBatch(folder, photos, state.Batch.OutputFolder ?? Path.Combine(folder, "Modificate"), state);
-            Status($"Modifica ripresa: {photos.Count(p => p.State == PhotoState.Saved)} di {photos.Count} foto già salvate.");
+            StartBatch(folder, photos, state.Batch.OutputFolder ?? Path.Combine(folder, T("Modificate")), state);
+            Status(T("Modifica ripresa: {0} di {1} foto già salvate.", photos.Count(p => p.State == PhotoState.Saved), photos.Count));
         }
 
         void StartBatch(string folder, List<PhotoItem> photos, string outputFolder, FolderState state)
@@ -175,7 +175,7 @@ namespace PhotoStudio
             }
             if (!File.Exists(item.EditPath))
             {
-                MessageBox.Show(this, "Il file non esiste più:\n" + item.EditPath, "Cartella di modifica", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(this, T("Il file non esiste più:\n{0}", item.EditPath), T("Cartella di modifica"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 SyncBatchSelection();
                 return;
             }
@@ -197,8 +197,8 @@ namespace PhotoStudio
             if (_batch.Count == 0) return;
             var current = BatchItemOf(S) ?? BatchList.SelectedItem as PhotoItem;
             int i = current == null ? (delta > 0 ? 0 : _batch.Count - 1) : _batch.IndexOf(current) + delta;
-            if (i < 0) { Status("Sei alla prima foto della cartella di modifica."); return; }
-            if (i >= _batch.Count) { Status("Sei all'ultima foto della cartella di modifica."); return; }
+            if (i < 0) { Status(T("Sei alla prima foto della cartella di modifica.")); return; }
+            if (i >= _batch.Count) { Status(T("Sei all'ultima foto della cartella di modifica.")); return; }
             OpenBatchItem(_batch[i]);
         }
 
@@ -233,9 +233,9 @@ namespace PhotoStudio
             if (_batch.Count == 0) return;
             int saved = _batch.Count(i => i.State == PhotoState.Saved);
             var current = BatchItemOf(S);
-            string position = current != null ? $"foto {_batch.IndexOf(current) + 1} di {_batch.Count}" : $"{_batch.Count} foto";
+            string position = current != null ? T("foto {0} di {1}", _batch.IndexOf(current) + 1, _batch.Count) : T("{0} foto", _batch.Count);
             string name = Path.GetFileName((_batchFolder ?? "").TrimEnd('\\', '/'));
-            BatchTitle.Text = $"CARTELLA DI MODIFICA — {name}   ·   {position}   ·   {saved} salvate";
+            BatchTitle.Text = T("CARTELLA DI MODIFICA — {0}   ·   {1}   ·   {2} salvate", name, position, saved);
         }
 
         // ---------- saving ----------
@@ -247,7 +247,7 @@ namespace PhotoStudio
             dir = BatchOutput.Text.Trim();
             try
             {
-                if (dir.Length == 0 || !Path.IsPathRooted(dir)) throw new ArgumentException("Il percorso deve essere completo, ad esempio C:\\Foto\\Modificate.");
+                if (dir.Length == 0 || !Path.IsPathRooted(dir)) throw new ArgumentException(T("Il percorso deve essere completo, ad esempio C:\\Foto\\Modificate."));
                 dir = Path.GetFullPath(dir);
                 Directory.CreateDirectory(dir);
                 BatchOutput.Text = dir;
@@ -255,8 +255,8 @@ namespace PhotoStudio
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Scegli una cartella valida in cui salvare le foto modificate (campo \"Salva in\").\n\n" + ex.Message,
-                    "Cartella di modifica", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(this, T("Scegli una cartella valida in cui salvare le foto modificate (campo \"Salva in\").\n\n{0}", ex.Message),
+                    T("Cartella di modifica"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 BatchOutput.Focus();
                 return false;
             }
@@ -322,7 +322,7 @@ namespace PhotoStudio
             using (Busy()) error = ExportPhoto(item, s.Doc.Width, s.Doc.Height, s.Doc.Render(), dir);
             if (error != null)
             {
-                MessageBox.Show(this, "Impossibile salvare il file:\n" + error, "Cartella di modifica", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, T("Impossibile salvare il file:\n{0}", error), T("Cartella di modifica"), MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
             if (s.RawSettings != null) item.Settings = s.RawSettings.Clone();
@@ -340,16 +340,16 @@ namespace PhotoStudio
             if (item == null)
             {
                 MessageBox.Show(this, _batch.Count == 0
-                        ? "Non c'è una cartella di modifica: usa File ▸ Preselezione cartella."
-                        : "La foto aperta non fa parte della cartella di modifica: scegli una foto dalla striscia in basso.",
-                    "Cartella di modifica", MessageBoxButton.OK, MessageBoxImage.Information);
+                        ? T("Non c'è una cartella di modifica: usa File ▸ Preselezione cartella.")
+                        : T("La foto aperta non fa parte della cartella di modifica: scegli una foto dalla striscia in basso."),
+                    T("Cartella di modifica"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             if (!EnsureOutputFolder(out var dir) || !SaveBatchItem(item, dir)) return;
             var session = item.Session;
             item.Session = null;
             CloseSession(session);
-            Status("Salvata: " + item.OutputPath);
+            Status(T("Salvata: {0}", item.OutputPath));
 
             int index = _batch.IndexOf(item);
             var next = _batch.Skip(index + 1).FirstOrDefault(i => i.State != PhotoState.Saved)
@@ -363,22 +363,22 @@ namespace PhotoStudio
             var open = _batch.Where(i => i.Session != null && _sessions.Contains(i.Session)).ToList();
             if (open.Count == 0)
             {
-                MessageBox.Show(this, "Nessuna foto della cartella di modifica è aperta: aprile dalla striscia in basso.",
-                    "Cartella di modifica", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, T("Nessuna foto della cartella di modifica è aperta: aprile dalla striscia in basso."),
+                    T("Cartella di modifica"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             if (!EnsureOutputFolder(out var dir)) return;
             int saved = open.Count(item => SaveBatchItem(item, dir));
             int pending = _batch.Count(i => i.State != PhotoState.Saved);
             if (pending == 0) BatchFinished(dir);
-            else Status($"{saved} foto salvate in {dir}. Restano {pending} foto da modificare.");
+            else Status(T("{0} foto salvate in {1}. Restano {2} foto da modificare.", saved, dir, pending));
         }
 
         void BatchFinished(string dir)
         {
             UpdateBatchTitle();
             int saved = _batch.Count(i => i.State == PhotoState.Saved);
-            if (MessageBox.Show(this, $"Hai finito: {saved} foto salvate in\n{dir}\n\nAprire la cartella?", "Cartella di modifica",
+            if (MessageBox.Show(this, T("Hai finito: {0} foto salvate in\n{1}\n\nAprire la cartella?", saved, dir), T("Cartella di modifica"),
                     MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
                 Process.Start(new ProcessStartInfo(dir) { UseShellExecute = true });
         }
@@ -394,7 +394,7 @@ namespace PhotoStudio
 
         void BatchBrowse_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new OpenFolderDialog { Title = "Dove salvare le foto modificate" };
+            var dlg = new OpenFolderDialog { Title = T("Dove salvare le foto modificate") };
             string current = BatchOutput.Text.Trim();
             if (Directory.Exists(current)) dlg.InitialDirectory = current;
             else if (_batchFolder != null) dlg.InitialDirectory = _batchFolder;
@@ -410,9 +410,8 @@ namespace PhotoStudio
         {
             int pending = _batch.Count(i => i.State != PhotoState.Saved);
             if (pending > 0 && MessageBox.Show(this,
-                    $"Chiudere la cartella di modifica?\n\n{pending} foto non sono ancora state salvate. Le schede aperte restano aperte.\n" +
-                    "Potrai riprendere da dove eri rimasto riaprendo la stessa cartella con la Preselezione.",
-                    "Cartella di modifica", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    T("Chiudere la cartella di modifica?\n\n{0} foto non sono ancora state salvate. Le schede aperte restano aperte.\nPotrai riprendere da dove eri rimasto riaprendo la stessa cartella con la Preselezione.", pending),
+                    T("Cartella di modifica"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                 return;
             if (_batchState != null)
             {
@@ -435,13 +434,12 @@ namespace PhotoStudio
             if (settings == null)
             {
                 MessageBox.Show(this,
-                    "Questa foto non è stata sviluppata con Camera Raw, quindi non ci sono impostazioni da copiare.\n\n" +
-                    "Apri Camera Raw (Maiusc+Ctrl+A), regola i cursori e premi OK, poi copia le impostazioni.",
-                    "Copia impostazioni", MessageBoxButton.OK, MessageBoxImage.Information);
+                    T("Questa foto non è stata sviluppata con Camera Raw, quindi non ci sono impostazioni da copiare.\n\nApri Camera Raw (Maiusc+Ctrl+A), regola i cursori e premi OK, poi copia le impostazioni."),
+                    T("Copia impostazioni"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             _copiedSettings = settings.Clone();
-            Status("Impostazioni copiate: " + settings.Describe() + ".  Alt+Maiusc+V per applicarle ad altre foto.");
+            Status(T("Impostazioni copiate: {0}.  Alt+Maiusc+V per applicarle ad altre foto.", settings.Describe()));
         }
 
         /// <summary>Alt+Maiusc+V: applies copied settings or a preset to the open photo or to the editing folder.</summary>
@@ -452,8 +450,8 @@ namespace PhotoStudio
             if (_copiedSettings == null && RawPreset.LoadAll().Count == 0)
             {
                 MessageBox.Show(this,
-                    "Non ci sono impostazioni da applicare.\n\nCopia quelle di una foto (Alt+Maiusc+C) oppure salva un preset in Camera Raw.",
-                    "Applica impostazioni", MessageBoxButton.OK, MessageBoxImage.Information);
+                    T("Non ci sono impostazioni da applicare.\n\nCopia quelle di una foto (Alt+Maiusc+C) oppure salva un preset in Camera Raw."),
+                    T("Applica impostazioni"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             var dlg = new ApplySettingsDialog(this, _copiedSettings, hasOpen, pendingItems.Count);
@@ -467,7 +465,7 @@ namespace PhotoStudio
             var targets = pendingItems.Where(i => i.Rating >= dlg.MinRating).ToList();
             if (targets.Count == 0)
             {
-                MessageBox.Show(this, "Nessuna foto da salvare ha abbastanza stelle.", "Applica impostazioni", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, T("Nessuna foto da salvare ha abbastanza stelle."), T("Applica impostazioni"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             RawSettings Merged(PhotoItem i) =>
@@ -481,15 +479,15 @@ namespace PhotoStudio
                     else i.Settings = Merged(i);
                 }
                 SaveBatchState();
-                Status($"Impostazioni pronte per {targets.Count} foto: le trovi applicate quando le apri.");
+                Status(T("Impostazioni pronte per {0} foto: le trovi applicate quando le apri.", targets.Count));
                 return;
             }
 
             if (!EnsureOutputFolder(out var dir)) return;
-            var result = await ProcessPhotos(targets, "Sviluppo e salvataggio", dir, true,
+            var result = await ProcessPhotos(targets, T("Sviluppo e salvataggio"), dir, true,
                 (src, item) => Merged(item),
                 session => ApplySettingsToSession(session, dlg.Settings, dlg.Groups, quiet: true));
-            ReportProcessed(result, dir, true, "Applica impostazioni");
+            ReportProcessed(result, dir, true, T("Applica impostazioni"));
         }
 
         sealed class ProcessResult
@@ -516,7 +514,7 @@ namespace PhotoStudio
                 foreach (var item in targets)
                 {
                     if (progress.Cancelled) { r.Cancelled = true; break; }
-                    progress.Report(r.Done, $"{r.Done + 1} di {targets.Count}: {item.Name}");
+                    progress.Report(r.Done, T("{0} di {1}: {2}", r.Done + 1, targets.Count, item.Name));
                     var session = item.Session != null && _sessions.Contains(item.Session) ? item.Session : null;
                     if (session != null)
                     {
@@ -565,11 +563,11 @@ namespace PhotoStudio
         void ReportProcessed(ProcessResult r, string dir, bool saved, string title)
         {
             string summary = saved
-                ? $"{r.Done - r.Skipped - r.Errors.Count} foto sviluppate e salvate in {dir}."
-                : $"{r.Done - r.Skipped - r.Errors.Count} foto pronte: le trovi già sistemate quando le apri.";
-            if (r.Skipped > 0) summary += $"\n{r.Skipped} foto aperte con modifiche a mano non sono state toccate.";
-            if (r.Errors.Count > 0) summary += "\n\nNon riuscite:\n" + string.Join("\n", r.Errors.Take(8)) + (r.Errors.Count > 8 ? "\n..." : "");
-            if (r.Cancelled) summary = "Interrotto.\n" + summary;
+                ? T("{0} foto sviluppate e salvate in {1}.", r.Done - r.Skipped - r.Errors.Count, dir)
+                : T("{0} foto pronte: le trovi già sistemate quando le apri.", r.Done - r.Skipped - r.Errors.Count);
+            if (r.Skipped > 0) summary += T("\n{0} foto aperte con modifiche a mano non sono state toccate.", r.Skipped);
+            if (r.Errors.Count > 0) summary += T("\n\nNon riuscite:\n{0}{1}", string.Join("\n", r.Errors.Take(8)), (r.Errors.Count > 8 ? "\n..." : ""));
+            if (r.Cancelled) summary = T("Interrotto.\n{0}", summary);
             if (saved && _batch.All(i => i.State == PhotoState.Saved)) { BatchFinished(dir); if (r.Errors.Count == 0 && r.Skipped == 0) return; }
             MessageBox.Show(this, summary, title, MessageBoxButton.OK, r.Errors.Count > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
         }
@@ -584,8 +582,8 @@ namespace PhotoStudio
             var pending = _batch.Where(i => i.State != PhotoState.Saved).ToList();
             if (S == null && pending.Count == 0)
             {
-                MessageBox.Show(this, "Apri una foto, oppure fai una Preselezione per sistemare la luce di tutte le foto di una cartella.",
-                    "Luce intelligente", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, T("Apri una foto, oppure fai una Preselezione per sistemare la luce di tutte le foto di una cartella."),
+                    T("Luce intelligente"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             var dlg = new SmartLightDialog(this, S != null, pending.Count, _smartIntensity);
@@ -600,15 +598,15 @@ namespace PhotoStudio
             var targets = pending.Where(i => i.Rating >= dlg.MinRating).ToList();
             if (targets.Count == 0)
             {
-                MessageBox.Show(this, "Nessuna foto da salvare ha abbastanza stelle.", "Luce intelligente", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, T("Nessuna foto da salvare ha abbastanza stelle."), T("Luce intelligente"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             string dir = null;
             if (dlg.SaveNow && !EnsureOutputFolder(out dir)) return;
-            var result = await ProcessPhotos(targets, "Luce intelligente", dir, dlg.SaveNow,
+            var result = await ProcessPhotos(targets, T("Luce intelligente"), dir, dlg.SaveNow,
                 (src, item) => SmartLight.Apply(src, item.Settings ?? RawSettings.Default(src.SceneReferred), k),
                 session => SmartLightOnSession(session, k, quiet: true));
-            ReportProcessed(result, dir, dlg.SaveNow, "Luce intelligente");
+            ReportProcessed(result, dir, dlg.SaveNow, T("Luce intelligente"));
         }
 
         /// <summary>
@@ -631,7 +629,7 @@ namespace PhotoStudio
                         settings = SmartLight.Apply(src, s.RawSettings ?? RawSettings.Default(src.SceneReferred), intensity);
                         d = RawDevelop.Develop(src, settings);
                     }
-                    ReplaceDeveloped(d.Width, d.Height, d.Pixels, "Luce intelligente");
+                    ReplaceDeveloped(d.Width, d.Height, d.Pixels, T("Luce intelligente"));
                     MarkDeveloped(s, settings);
                     var item = BatchItemOf(s);
                     if (item != null) { item.Settings = settings.Clone(); SaveBatchState(); }
@@ -648,16 +646,16 @@ namespace PhotoStudio
                         layer.Pixels = ImageOps.ApplyMask(original, RawDevelop.Render(linear, settings), S.Selection);
                     }
                     Recomposite();
-                    Commit("Luce intelligente");
+                    Commit(T("Luce intelligente"));
                 }
             }
             catch (Exception ex)
             {
-                if (!quiet) MessageBox.Show(this, "Luce intelligente non riuscita:\n" + ex.Message, "Luce intelligente", MessageBoxButton.OK, MessageBoxImage.Warning);
+                if (!quiet) MessageBox.Show(this, T("Luce intelligente non riuscita:\n{0}", ex.Message), T("Luce intelligente"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return false;
             }
             if (!quiet)
-                Status("Luce intelligente: " + settings.Describe() + ".   Ctrl+Z per annullare · Alt+Ctrl+M per ritoccare le maschere di luce.");
+                Status(T("Luce intelligente: {0}.   Ctrl+Z per annullare · Alt+Ctrl+M per ritoccare le maschere di luce.", settings.Describe()));
             return true;
         }
 
@@ -666,8 +664,8 @@ namespace PhotoStudio
         {
             if (S == null)
             {
-                MessageBox.Show(this, "Apri prima una foto: le maschere di luce ritoccano solo una parte della foto (le ombre, le luci, il cielo...).",
-                    "Maschere di luce", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, T("Apri prima una foto: le maschere di luce ritoccano solo una parte della foto (le ombre, le luci, il cielo...)."),
+                    T("Maschere di luce"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
             CameraRawFilter(false, "Maschere");
@@ -681,12 +679,12 @@ namespace PhotoStudio
             _export = dlg.Options;
             try { _export.Save(); } catch { }
             UpdateExportTooltip();
-            Status("Opzioni di esportazione: " + _export.Describe());
+            Status(T("Opzioni di esportazione: {0}", _export.Describe()));
         }
 
         void UpdateExportTooltip()
         {
-            if (BatchExportButton != null) BatchExportButton.ToolTip = "Dimensione, nome dei file e filigrana delle foto salvate\nAdesso: " + _export.Describe();
+            if (BatchExportButton != null) BatchExportButton.ToolTip = T("Dimensione, nome dei file e filigrana delle foto salvate\nAdesso: {0}", _export.Describe());
         }
     }
 }

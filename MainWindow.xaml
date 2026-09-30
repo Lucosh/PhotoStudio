@@ -156,6 +156,8 @@
                 <MenuItem Header="Zoom indietro" InputGestureText="Ctrl+-" Tag="view.zoomout" Click="Menu_Click"/>
                 <MenuItem Header="Adatta allo schermo" InputGestureText="Ctrl+0" Tag="view.fit" Click="Menu_Click"/>
                 <MenuItem Header="Pixel effettivi (100%)" InputGestureText="Ctrl+1" Tag="view.actual" Click="Menu_Click"/>
+                <Separator/>
+                <MenuItem x:Name="LanguageMenu" Header="Lingua"/>
             </MenuItem>
             <MenuItem Header="_Aiuto">
                 <MenuItem Header="Scorciatoie da tastiera" InputGestureText="F1" Tag="help.keys" Click="Menu_Click"/>
@@ -527,7 +529,7 @@
                                         <ColumnDefinition Width="48"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <CheckBox Style="{StaticResource EyeToggle}" IsChecked="{Binding Visible}" ToolTip="Mostra/nascondi livello"/>
+                                    <CheckBox Style="{StaticResource EyeToggle}" IsChecked="{Binding Visible}" ToolTip="{DynamicResource Loc.ToggleLayer}"/>
                                     <Border Grid.Column="1" MaxWidth="42" MaxHeight="42" HorizontalAlignment="Center" VerticalAlignment="Center"
                                             Background="{StaticResource CheckerSmall}" BorderBrush="#FF111111" BorderThickness="1">
                                         <Image Source="{Binding Thumbnail}" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>

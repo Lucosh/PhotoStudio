@@ -23,6 +23,9 @@
   <a href="../../releases/latest"><b>⬇ Scarica l'ultima versione</b></a>
 </p>
 
+> [!NOTE]
+> L'interfaccia è in italiano, inglese, tedesco, francese e spagnolo: PhotoStudio usa la lingua di Windows e puoi cambiarla in *Visualizza ▸ Lingua*.
+
 ## Funzionalità
 
 ### 🗂️ Preselezione

@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using PhotoStudio.Core;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Dialogs
 {
@@ -127,7 +128,7 @@ namespace PhotoStudio.Dialogs
             // ---- Preview side
             var left = new DockPanel();
             var info = new DockPanel { Background = Res("PanelHeaderBg"), Height = 34 };
-            _showOriginal = new CheckBox { Content = "Mostra originale", Margin = new Thickness(0, 0, 14, 0), VerticalAlignment = VerticalAlignment.Center, Focusable = false };
+            _showOriginal = new CheckBox { Content = T("Mostra originale"), Margin = new Thickness(0, 0, 14, 0), VerticalAlignment = VerticalAlignment.Center, Focusable = false };
             _showOriginal.Checked += (s, e) => Schedule();
             _showOriginal.Unchecked += (s, e) => Schedule();
             DockPanel.SetDock(_showOriginal, Dock.Right);
@@ -135,7 +136,7 @@ namespace PhotoStudio.Dialogs
             _view = new ComboBox
             {
                 Width = 150, Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center, Focusable = false, SelectedIndex = 0,
-                ItemsSource = new[] { "Vista: Dopo", "Vista: Prima | Dopo" }, ToolTip = "Confronta l'originale con il risultato, affiancati (Y)",
+                ItemsSource = new[] { T("Vista: Dopo"), T("Vista: Prima | Dopo") }, ToolTip = T("Confronta l'originale con il risultato, affiancati (Y)"),
             };
             _view.SelectionChanged += (s, e) => UpdateView();
             DockPanel.SetDock(_view, Dock.Right);
@@ -159,7 +160,7 @@ namespace PhotoStudio.Dialogs
             _beforeImage = new Image { Stretch = Stretch.Uniform };
             RenderOptions.SetBitmapScalingMode(_beforeImage, BitmapScalingMode.HighQuality);
             beforeHost.Children.Add(_beforeImage);
-            beforeHost.Children.Add(CornerTag("PRIMA"));
+            beforeHost.Children.Add(CornerTag(T("PRIMA")));
             viewGrid.Children.Add(beforeHost);
 
             var afterHost = new Grid();
@@ -168,10 +169,10 @@ namespace PhotoStudio.Dialogs
             RenderOptions.SetBitmapScalingMode(_image, BitmapScalingMode.HighQuality);
             _image.MouseLeftButtonDown += (s, e) => { _showOriginal.IsChecked = true; _image.CaptureMouse(); };
             _image.MouseLeftButtonUp += (s, e) => { _showOriginal.IsChecked = false; _image.ReleaseMouseCapture(); };
-            _image.ToolTip = "Tieni premuto il mouse sull'immagine per vedere l'originale";
+            _image.ToolTip = T("Tieni premuto il mouse sull'immagine per vedere l'originale");
             _overlay = new Canvas();
             afterHost.Children.Add(_image);
-            _afterTag = CornerTag("DOPO");
+            _afterTag = CornerTag(T("DOPO"));
             _afterTag.Visibility = Visibility.Collapsed;
             afterHost.Children.Add(_afterTag);
             afterHost.Children.Add(_overlay);
@@ -188,7 +189,7 @@ namespace PhotoStudio.Dialogs
             _status = new TextBlock { Foreground = Res("TextDimBrush"), Margin = new Thickness(0, 0, 0, 8), TextWrapping = TextWrapping.Wrap, MaxHeight = 64 };
             bottom.Children.Add(_status);
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            _cancel = new Button { Content = "Annulla", IsCancel = true, MinWidth = 96 };
+            _cancel = new Button { Content = T("Annulla"), IsCancel = true, MinWidth = 96 };
             _ok = new Button { Content = okText, IsDefault = true, MinWidth = 120, Margin = new Thickness(8, 0, 0, 0) };
             _ok.Click += Ok_Click;
             buttons.Children.Add(_cancel);
@@ -226,8 +227,8 @@ namespace PhotoStudio.Dialogs
             _timer.Tick += (s, e) => { _timer.Stop(); RenderPreview(); };
             _smartTimer.Tick += (s, e) => { _smartTimer.Stop(); RunSmartLight(); };
             SetSettings(_s);
-            if (initial != null) _status.Text = "Impostazioni applicate: " + _s.Describe();
-            else if (autoOnOpen) _status.Text = "Automatico: " + _s.Describe();
+            if (initial != null) _status.Text = T("Impostazioni applicate: {0}", _s.Describe());
+            else if (autoOnOpen) _status.Text = T("Automatico: {0}", _s.Describe());
             Closing += OnClosing;
             PreviewKeyDown += OnKey;
             _aiTimer.Tick += (s, e) => UpdateAiBusy();
@@ -271,11 +272,15 @@ namespace PhotoStudio.Dialogs
 
         // ================= Tabs =================
 
+        /// <summary>Button text that shrinks instead of being cut when a translation is longer than the button.</summary>
+        static Viewbox FitText(string text) => new Viewbox { Child = new TextBlock { Text = text }, StretchDirection = StretchDirection.DownOnly };
+
         static StackPanel TabPanel() => new StackPanel { Margin = new Thickness(14, 6, 14, 10) };
 
+        /// <param name="name">Italian tab name: the tab's identifier, translated only for display.</param>
         void AddTab(Panel strip, string name, Panel content)
         {
-            var header = new Button { Content = name, Padding = new Thickness(2, 5, 2, 5), Margin = new Thickness(1, 0, 1, 0), Focusable = false, FontSize = 11.5 };
+            var header = new Button { Content = FitText(T(name)), Padding = new Thickness(2, 5, 2, 5), Margin = new Thickness(1, 0, 1, 0), Focusable = false, FontSize = 11.5 };
             header.Click += (s, e) => ShowTab(name);
             strip.Children.Add(header);
             _tabs[name] = (header, content);
@@ -365,19 +370,18 @@ namespace PhotoStudio.Dialogs
             autoRow.ColumnDefinitions.Add(new ColumnDefinition());
             var auto = new Button
             {
-                Content = "Automatico", Padding = new Thickness(6, 6, 6, 6), Background = Res("AccentBrush"), BorderBrush = Res("AccentBrush"),
-                ToolTip = "Come in Camera Raw: regola Esposizione, Contrasto, Luci, Ombre, Bianchi, Neri, Vividezza e Saturazione (Ctrl+U).\nIl bilanciamento del bianco non viene toccato.",
+                Content = FitText(T("Automatico")), Padding = new Thickness(6, 6, 6, 6), Background = Res("AccentBrush"), BorderBrush = Res("AccentBrush"),
+                ToolTip = T("Come in Camera Raw: regola Esposizione, Contrasto, Luci, Ombre, Bianchi, Neri, Vividezza e Saturazione (Ctrl+U).\nIl bilanciamento del bianco non viene toccato."),
             };
             auto.Click += (s, e) => RunAutoTone();
             var smart = new Button
             {
-                Content = "☀ Luce intelligente", Padding = new Thickness(6, 6, 6, 6), FontWeight = FontWeights.SemiBold,
+                Content = FitText(T("☀ Luce intelligente")), Padding = new Thickness(6, 6, 6, 6), FontWeight = FontWeights.SemiBold,
                 Background = new SolidColorBrush(Color.FromRgb(0xC8, 0x8A, 0x1E)), BorderBrush = new SolidColorBrush(Color.FromRgb(0xC8, 0x8A, 0x1E)), Foreground = Brushes.White,
-                ToolTip = "Sistema la luce in un clic: esposizione e toni come Automatico, poi maschere di luce dove servono\n" +
-                          "(schiarisce le zone scure, recupera luci e cielo, illumina il soggetto). Tutto resta modificabile nella scheda Maschere.",
+                ToolTip = T("Sistema la luce in un clic: esposizione e toni come Automatico, poi maschere di luce dove servono\n(schiarisce le zone scure, recupera luci e cielo, illumina il soggetto). Tutto resta modificabile nella scheda Maschere."),
             };
             smart.Click += (s, e) => RunSmartLight();
-            var reset = new Button { Content = "Predefinito", Padding = new Thickness(6, 6, 6, 6), ToolTip = "Riporta tutti i cursori ai valori predefiniti (anche curva, colore, ritaglio e maschere)" };
+            var reset = new Button { Content = FitText(T("Predefinito")), Padding = new Thickness(6, 6, 6, 6), ToolTip = T("Riporta tutti i cursori ai valori predefiniti (anche curva, colore, ritaglio e maschere)") };
             reset.Click += (s, e) => { _beforeSmart = null; SetSettings(_defaults.Clone(), 0); _status.Text = ""; };
             Grid.SetColumn(smart, 2);
             Grid.SetColumn(reset, 4);
@@ -390,8 +394,8 @@ namespace PhotoStudio.Dialogs
             var intensityValue = new TextBlock { Width = 44, TextAlignment = TextAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Foreground = Res("TextDimBrush") };
             DockPanel.SetDock(intensityValue, Dock.Right);
             intensityRow.Children.Add(intensityValue);
-            intensityRow.Children.Add(new TextBlock { Text = "Intensità luce", Width = 92, VerticalAlignment = VerticalAlignment.Center, Foreground = Res("TextDimBrush") });
-            _smartIntensity = new Slider { Minimum = 0, Maximum = 150, Value = 100, SmallChange = 5, LargeChange = 25, ToolTip = "Quanto deve intervenire la Luce intelligente (100% = normale)" };
+            intensityRow.Children.Add(new TextBlock { Text = T("Intensità luce"), Width = 92, VerticalAlignment = VerticalAlignment.Center, Foreground = Res("TextDimBrush") });
+            _smartIntensity = new Slider { Minimum = 0, Maximum = 150, Value = 100, SmallChange = 5, LargeChange = 25, ToolTip = T("Quanto deve intervenire la Luce intelligente (100% = normale)") };
             _smartIntensity.ValueChanged += (s, e) =>
             {
                 intensityValue.Text = Math.Round(_smartIntensity.Value) + " %";
@@ -406,30 +410,30 @@ namespace PhotoStudio.Dialogs
 
             var wbBrush = new LinearGradientBrush(Color.FromRgb(0x3C, 0x6E, 0xD8), Color.FromRgb(0xE8, 0xC8, 0x30), 0);
             var tintBrush = new LinearGradientBrush(Color.FromRgb(0x3C, 0xB0, 0x4A), Color.FromRgb(0xC8, 0x3C, 0xC0), 0);
-            Section(panel, "BILANCIAMENTO DEL BIANCO");
+            Section(panel, T("BILANCIAMENTO DEL BIANCO"));
             _wbCombo = new ComboBox
             {
-                ItemsSource = new[] { "Come scattato", "Automatico", "Personalizzato" }, SelectedIndex = 0,
-                Margin = new Thickness(0, 0, 0, 6), ToolTip = "Automatico: Ctrl+Maiusc+U",
+                ItemsSource = new[] { T("Come scattato"), T("Automatico"), T("Personalizzato") }, SelectedIndex = 0,
+                Margin = new Thickness(0, 0, 0, 6), ToolTip = T("Automatico: Ctrl+Maiusc+U"),
             };
             _wbCombo.SelectionChanged += (s, e) => OnWhiteBalanceMode();
             panel.Children.Add(_wbCombo);
-            Row(panel, "Temperatura", -100, 100, 0, x => x.Temperature, (x, v) => x.Temperature = v, wbBrush, whiteBalance: true);
-            Row(panel, "Tinta", -100, 100, 0, x => x.Tint, (x, v) => x.Tint = v, tintBrush, whiteBalance: true);
-            Section(panel, "TONO");
-            Row(panel, "Esposizione", -5, 5, 2, x => x.Exposure, (x, v) => x.Exposure = v);
-            Row(panel, "Contrasto", -100, 100, 0, x => x.Contrast, (x, v) => x.Contrast = v);
-            Row(panel, "Luci", -100, 100, 0, x => x.Highlights, (x, v) => x.Highlights = v);
-            Row(panel, "Ombre", -100, 100, 0, x => x.Shadows, (x, v) => x.Shadows = v);
-            Row(panel, "Bianchi", -100, 100, 0, x => x.Whites, (x, v) => x.Whites = v);
-            Row(panel, "Neri", -100, 100, 0, x => x.Blacks, (x, v) => x.Blacks = v);
-            Section(panel, "PRESENZA");
-            Row(panel, "Texture", -100, 100, 0, x => x.Texture, (x, v) => x.Texture = v);
-            Row(panel, "Chiarezza", -100, 100, 0, x => x.Clarity, (x, v) => x.Clarity = v);
-            Row(panel, "Foschia", -100, 100, 0, x => x.Dehaze, (x, v) => x.Dehaze = v);
-            Row(panel, "Vividezza", -100, 100, 0, x => x.Vibrance, (x, v) => x.Vibrance = v);
-            Row(panel, "Saturazione", -100, 100, 0, x => x.Saturation, (x, v) => x.Saturation = v);
-            panel.Children.Add(Hint("Texture: dettagli fini (positivo) o pelle più morbida (negativo). Foschia: positivo toglie la nebbia, negativo la aggiunge.\nDoppio clic sul nome di un cursore per azzerarlo. Y: confronto Prima / Dopo."));
+            Row(panel, T("Temperatura"), -100, 100, 0, x => x.Temperature, (x, v) => x.Temperature = v, wbBrush, whiteBalance: true);
+            Row(panel, T("Tinta"), -100, 100, 0, x => x.Tint, (x, v) => x.Tint = v, tintBrush, whiteBalance: true);
+            Section(panel, T("TONO"));
+            Row(panel, T("Esposizione"), -5, 5, 2, x => x.Exposure, (x, v) => x.Exposure = v);
+            Row(panel, T("Contrasto"), -100, 100, 0, x => x.Contrast, (x, v) => x.Contrast = v);
+            Row(panel, T("Luci"), -100, 100, 0, x => x.Highlights, (x, v) => x.Highlights = v);
+            Row(panel, T("Ombre"), -100, 100, 0, x => x.Shadows, (x, v) => x.Shadows = v);
+            Row(panel, T("Bianchi"), -100, 100, 0, x => x.Whites, (x, v) => x.Whites = v);
+            Row(panel, T("Neri"), -100, 100, 0, x => x.Blacks, (x, v) => x.Blacks = v);
+            Section(panel, T("PRESENZA"));
+            Row(panel, T("Texture"), -100, 100, 0, x => x.Texture, (x, v) => x.Texture = v);
+            Row(panel, T("Chiarezza"), -100, 100, 0, x => x.Clarity, (x, v) => x.Clarity = v);
+            Row(panel, T("Foschia"), -100, 100, 0, x => x.Dehaze, (x, v) => x.Dehaze = v);
+            Row(panel, T("Vividezza"), -100, 100, 0, x => x.Vibrance, (x, v) => x.Vibrance = v);
+            Row(panel, T("Saturazione"), -100, 100, 0, x => x.Saturation, (x, v) => x.Saturation = v);
+            panel.Children.Add(Hint(T("Texture: dettagli fini (positivo) o pelle più morbida (negativo). Foschia: positivo toglie la nebbia, negativo la aggiunge.\nDoppio clic sul nome di un cursore per azzerarlo. Y: confronto Prima / Dopo.")));
         }
 
         static TextBlock Hint(string text) => new TextBlock
@@ -442,20 +446,20 @@ namespace PhotoStudio.Dialogs
         Panel BuildDetailTab()
         {
             var p = TabPanel();
-            Section(p, "NITIDEZZA");
-            Row(p, "Nitidezza", 0, 150, 0, x => x.Sharpening, (x, v) => x.Sharpening = v);
-            Section(p, "RIDUZIONE DEL RUMORE");
-            Row(p, "Luminanza", 0, 100, 0, x => x.NoiseLuma, (x, v) => x.NoiseLuma = v);
-            Row(p, "Colore", 0, 100, 0, x => x.NoiseColor, (x, v) => x.NoiseColor = v);
-            p.Children.Add(Hint("Luminanza leviga la grana delle foto ad alti ISO; Colore toglie le macchioline colorate. Controlla il risultato con lo zoom al 100% dopo l'apertura."));
-            Section(p, "VIGNETTATURA (DOPO IL RITAGLIO)");
-            Row(p, "Fattore", -100, 100, 0, x => x.VignetteAmount, (x, v) => x.VignetteAmount = v);
-            Row(p, "Punto medio", 0, 100, 0, x => x.VignetteMidpoint, (x, v) => x.VignetteMidpoint = v, reset: 50);
-            Row(p, "Sfumatura", 0, 100, 0, x => x.VignetteFeather, (x, v) => x.VignetteFeather = v, reset: 50);
-            Section(p, "GRANA");
-            Row(p, "Fattore", 0, 100, 0, x => x.GrainAmount, (x, v) => x.GrainAmount = v);
-            Row(p, "Dimensione", 0, 100, 0, x => x.GrainSize, (x, v) => x.GrainSize = v, reset: 25);
-            p.Children.Add(Hint("Vignettatura negativa scurisce gli angoli, positiva li schiarisce. La grana imita l'aspetto della pellicola."));
+            Section(p, T("NITIDEZZA"));
+            Row(p, T("Nitidezza"), 0, 150, 0, x => x.Sharpening, (x, v) => x.Sharpening = v);
+            Section(p, T("RIDUZIONE DEL RUMORE"));
+            Row(p, T("Luminanza"), 0, 100, 0, x => x.NoiseLuma, (x, v) => x.NoiseLuma = v);
+            Row(p, T("Colore"), 0, 100, 0, x => x.NoiseColor, (x, v) => x.NoiseColor = v);
+            p.Children.Add(Hint(T("Luminanza leviga la grana delle foto ad alti ISO; Colore toglie le macchioline colorate. Controlla il risultato con lo zoom al 100% dopo l'apertura.")));
+            Section(p, T("VIGNETTATURA (DOPO IL RITAGLIO)"));
+            Row(p, T("Fattore"), -100, 100, 0, x => x.VignetteAmount, (x, v) => x.VignetteAmount = v);
+            Row(p, T("Punto medio"), 0, 100, 0, x => x.VignetteMidpoint, (x, v) => x.VignetteMidpoint = v, reset: 50);
+            Row(p, T("Sfumatura"), 0, 100, 0, x => x.VignetteFeather, (x, v) => x.VignetteFeather = v, reset: 50);
+            Section(p, T("GRANA"));
+            Row(p, T("Fattore"), 0, 100, 0, x => x.GrainAmount, (x, v) => x.GrainAmount = v);
+            Row(p, T("Dimensione"), 0, 100, 0, x => x.GrainSize, (x, v) => x.GrainSize = v, reset: 25);
+            p.Children.Add(Hint(T("Vignettatura negativa scurisce gli angoli, positiva li schiarisce. La grana imita l'aspetto della pellicola.")));
             return p;
         }
 
@@ -467,17 +471,15 @@ namespace PhotoStudio.Dialogs
             var start = _beforeSmart != null && _smartEdits == _userEdits ? _beforeSmart.Clone() : _s.Clone();
             _beforeSmart = start.Clone();
             double k = _smartIntensity.Value;
-            _status.Text = "Luce intelligente in corso...";
+            _status.Text = T("Luce intelligente in corso...");
             RawSettings result;
             try { result = await Task.Run(() => SmartLight.Apply(_preview, start, k)); }
-            catch (Exception ex) { _status.Text = "Luce intelligente non riuscita: " + ex.Message; return; }
+            catch (Exception ex) { _status.Text = T("Luce intelligente non riuscita: {0}", ex.Message); return; }
             if (_closed) return;
             SetSettings(result);
             _smartEdits = _userEdits;
-            var masks = result.Masks.Where(m => m.Name != null && m.Name.StartsWith(SmartLight.Prefix, StringComparison.Ordinal))
-                                    .Select(m => m.Name.Substring(Math.Min(m.Name.Length, SmartLight.Prefix.Length + 2))).ToList();
-            _status.Text = $"Luce intelligente ({k:0} %): esposizione {result.Exposure:+0.00;-0.00;0}, luci {result.Highlights:+0;-0;0}, ombre {result.Shadows:+0;-0;0}" +
-                           (masks.Count > 0 ? $". Maschere di luce: {string.Join(", ", masks)} (scheda Maschere per ritoccarle)." : ".");
+            var masks = result.Masks.Where(SmartLight.IsAuto).Select(SmartLight.ZoneOf).ToList();
+            _status.Text = T("Luce intelligente ({0:0} %): esposizione {1:+0.00;-0.00;0}, luci {2:+0;-0;0}, ombre {3:+0;-0;0}{4}", k, result.Exposure, result.Highlights, result.Shadows, (masks.Count > 0 ? T(". Maschere di luce: {0} (scheda Maschere per ritoccarle).", string.Join(", ", masks)) : "."));
         }
 
         // ================= Presets =================
@@ -488,22 +490,22 @@ namespace PhotoStudio.Dialogs
             row.ColumnDefinitions.Add(new ColumnDefinition());
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            _presets = new ComboBox { ToolTip = "Applica un preset salvato: tutti i cursori prendono i valori del preset" };
+            _presets = new ComboBox { ToolTip = T("Applica un preset salvato: tutti i cursori prendono i valori del preset") };
             _presets.SelectionChanged += (s, e) =>
             {
                 _presetDelete.IsEnabled = _presets.SelectedIndex > 0;
                 if (_presetProgrammatic || _presets.SelectedItem is not RawPreset { Settings: not null } p) return;
                 SetSettings(p.Settings);
-                _status.Text = $"Preset \"{p.Name}\": {p.Settings.Describe()}";
+                _status.Text = T("Preset \"{0}\": {1}", p.Name, p.Settings.Describe());
             };
-            var save = new Button { Content = "Salva...", Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(6, 0, 0, 0), ToolTip = "Salva i valori attuali dei cursori come preset" };
+            var save = new Button { Content = T("Salva..."), Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(6, 0, 0, 0), ToolTip = T("Salva i valori attuali dei cursori come preset") };
             save.Click += (s, e) => SavePreset();
-            _presetDelete = new Button { Content = "Elimina", Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(6, 0, 0, 0), IsEnabled = false, ToolTip = "Elimina il preset scelto" };
+            _presetDelete = new Button { Content = T("Elimina"), Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(6, 0, 0, 0), IsEnabled = false, ToolTip = T("Elimina il preset scelto") };
             _presetDelete.Click += (s, e) =>
             {
                 if (_presets.SelectedItem is not RawPreset { Settings: not null } p) return;
-                if (MessageBox.Show(this, $"Eliminare il preset \"{p.Name}\"?", "Preset", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-                try { RawPreset.Delete(p.Name); } catch (Exception ex) { MessageBox.Show(this, ex.Message, "Preset", MessageBoxButton.OK, MessageBoxImage.Warning); }
+                if (MessageBox.Show(this, T("Eliminare il preset \"{0}\"?", p.Name), T("Preset"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+                try { RawPreset.Delete(p.Name); } catch (Exception ex) { MessageBox.Show(this, ex.Message, T("Preset"), MessageBoxButton.OK, MessageBoxImage.Warning); }
                 LoadPresets(null);
             };
             Grid.SetColumn(save, 1);
@@ -518,7 +520,7 @@ namespace PhotoStudio.Dialogs
         void LoadPresets(string select)
         {
             _presetProgrammatic = true;
-            var items = new List<RawPreset> { new RawPreset { Name = "Preset: nessuno" } };   // placeholder, no settings
+            var items = new List<RawPreset> { new RawPreset { Name = T("Preset: nessuno") } };   // placeholder, no settings
             items.AddRange(RawPreset.LoadAll());
             _presets.ItemsSource = items;
             _presets.DisplayMemberPath = nameof(RawPreset.Name);
@@ -530,17 +532,17 @@ namespace PhotoStudio.Dialogs
         void SavePreset()
         {
             string current = _presets.SelectedItem is RawPreset { Settings: not null } p ? p.Name : "";
-            var dlg = new NameDialog(this, "Salva preset", "Nome del preset (es. Ritratto caldo):", current);
+            var dlg = new NameDialog(this, T("Salva preset"), T("Nome del preset (es. Ritratto caldo):"), current);
             if (dlg.ShowDialog() != true) return;
             try
             {
                 RawPreset.Save(dlg.Value, _s);
                 LoadPresets(dlg.Value);
-                _status.Text = $"Preset \"{dlg.Value}\" salvato.";
+                _status.Text = T("Preset \"{0}\" salvato.", dlg.Value);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Impossibile salvare il preset:\n" + ex.Message, "Preset", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(this, T("Impossibile salvare il preset:\n{0}", ex.Message), T("Preset"), MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -551,16 +553,16 @@ namespace PhotoStudio.Dialogs
         void BuildAiSection(Panel panel)
         {
             var dim = Res("TextDimBrush");
-            Section(panel, "ASSISTENTE AI");
+            Section(panel, T("ASSISTENTE AI"));
 
             var providerRow = new Grid { Margin = new Thickness(0, 0, 0, 6) };
             providerRow.ColumnDefinitions.Add(new ColumnDefinition());
             providerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             _aiProvider = new ComboBox
             {
-                ItemsSource = new[] { "Gemini (Google)", "Ollama (sul tuo PC)", "Claude (Anthropic)" },
+                ItemsSource = new[] { "Gemini (Google)", T("Ollama (sul tuo PC)"), "Claude (Anthropic)" },
                 SelectedIndex = Array.IndexOf(ProviderOrder, AiSettings.Load().Provider),
-                ToolTip = "Servizio AI che sceglie i valori dei cursori",
+                ToolTip = T("Servizio AI che sceglie i valori dei cursori"),
             };
             _aiProvider.SelectionChanged += (s, e) =>
             {
@@ -572,7 +574,7 @@ namespace PhotoStudio.Dialogs
             var gear = new Button
             {
                 Content = "", FontFamily = (FontFamily)Application.Current.FindResource("IconFont"),
-                Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(6, 0, 0, 0), ToolTip = "Impostazioni AI (chiavi e modelli)",
+                Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(6, 0, 0, 0), ToolTip = T("Impostazioni AI (chiavi e modelli)"),
             };
             gear.Click += (s, e) => OpenAiSettings(SelectedProvider);
             Grid.SetColumn(gear, 1);
@@ -585,11 +587,11 @@ namespace PhotoStudio.Dialogs
             {
                 Height = 50, TextWrapping = TextWrapping.Wrap, VerticalContentAlignment = VerticalAlignment.Top,
                 Padding = new Thickness(5, 4, 5, 4),
-                ToolTip = "Descrivi a parole il risultato che vuoi. L'AI sceglie i valori dei cursori, la foto viene elaborata da PhotoStudio.",
+                ToolTip = T("Descrivi a parole il risultato che vuoi. L'AI sceglie i valori dei cursori, la foto viene elaborata da PhotoStudio."),
             };
             var placeholder = new TextBlock
             {
-                Text = "Cosa vuoi ottenere? Es.: più calda e luminosa, look cinematografico… (vuoto = la modifica migliore)",
+                Text = T("Cosa vuoi ottenere? Es.: più calda e luminosa, look cinematografico… (vuoto = la modifica migliore)"),
                 Foreground = dim, FontStyle = FontStyles.Italic, TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(8, 5, 8, 0), IsHitTestVisible = false,
             };
@@ -621,7 +623,7 @@ namespace PhotoStudio.Dialogs
             {
                 Content = "", FontFamily = (FontFamily)Application.Current.FindResource("IconFont"),
                 Padding = new Thickness(12, 6, 12, 6), IsEnabled = false,
-                ToolTip = "Ripristina i valori precedenti al suggerimento dell'AI",
+                ToolTip = T("Ripristina i valori precedenti al suggerimento dell'AI"),
             };
             _aiUndo.Click += (s, e) =>
             {
@@ -630,7 +632,7 @@ namespace PhotoStudio.Dialogs
                 _beforeAi = null;
                 _aiUndo.IsEnabled = false;
                 _aiText.Foreground = Res("TextDimBrush");
-                _aiText.Text = "Valori precedenti ripristinati.";
+                _aiText.Text = T("Valori precedenti ripristinati.");
             };
             Grid.SetColumn(_aiUndo, 2);
             row.Children.Add(_aiButton);
@@ -640,7 +642,7 @@ namespace PhotoStudio.Dialogs
             _aiText = new TextBlock
             {
                 TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0), Foreground = dim,
-                Text = "L'AI riceve solo un'anteprima ridotta e risponde con i valori dei cursori: i pixel li elabora PhotoStudio.",
+                Text = T("L'AI riceve solo un'anteprima ridotta e risponde con i valori dei cursori: i pixel li elabora PhotoStudio."),
             };
             panel.Children.Add(_aiText);
             UpdateAiButton();
@@ -650,7 +652,7 @@ namespace PhotoStudio.Dialogs
 
         void UpdateAiButton()
         {
-            if (_aiCts == null) _aiButton.Content = "✦  Chiedi a " + AiEditor.DisplayName(SelectedProvider);
+            if (_aiCts == null) _aiButton.Content = T("✦  Chiedi a {0}", AiEditor.DisplayName(SelectedProvider));
         }
 
         bool OpenAiSettings(AiProvider provider)
@@ -673,7 +675,7 @@ namespace PhotoStudio.Dialogs
         }
 
         void UpdateAiBusy() =>
-            _aiButton.Content = $"Annulla richiesta ({(int)(DateTime.Now - _aiStart).TotalSeconds} s)";
+            _aiButton.Content = T("Annulla richiesta ({0} s)", (int)(DateTime.Now - _aiStart).TotalSeconds);
 
         async void AskAi()
         {
@@ -696,8 +698,8 @@ namespace PhotoStudio.Dialogs
             _aiTimer.Start();
             _aiText.Foreground = Res("TextDimBrush");
             _aiText.Text = config.Provider == AiProvider.Ollama
-                ? $"Il modello {config.OllamaModel} sta analizzando la foto sul tuo PC (può richiedere anche un minuto)..."
-                : name + " sta analizzando la foto...";
+                ? T("Il modello {0} sta analizzando la foto sul tuo PC (può richiedere anche un minuto)...", config.OllamaModel)
+                : T("{0} sta analizzando la foto...", name);
             try
             {
                 var (jpeg, stats) = await Task.Run(() =>
@@ -718,11 +720,11 @@ namespace PhotoStudio.Dialogs
                 _aiUndo.IsEnabled = true;
                 _aiText.Foreground = Res("TextBrush");
                 _aiText.Text = name + ": " + (string.IsNullOrWhiteSpace(suggestion.Explanation) ? suggestion.Settings.Describe() : suggestion.Explanation) +
-                               (string.IsNullOrWhiteSpace(suggestion.Note) ? "" : "\n(Nota: " + suggestion.Note + ")");
+                               (string.IsNullOrWhiteSpace(suggestion.Note) ? "" : T("\n(Nota: {0})", suggestion.Note));
             }
             catch (OperationCanceledException)
             {
-                if (!_closed) _aiText.Text = "Richiesta annullata.";
+                if (!_closed) _aiText.Text = T("Richiesta annullata.");
             }
             catch (Exception ex)
             {
@@ -847,13 +849,11 @@ namespace PhotoStudio.Dialogs
         async void RunAutoTone()
         {
             var current = _s.Clone();
-            _status.Text = "Automatico in corso...";
+            _status.Text = T("Automatico in corso...");
             var result = await Task.Run(() => RawDevelop.AutoTone(_preview, current));
             if (_closed) return;
             SetSettings(result);
-            _status.Text = $"Automatico: esposizione {result.Exposure:+0.00;-0.00;0}, contrasto {result.Contrast:+0;-0;0}, " +
-                           $"luci {result.Highlights:+0;-0;0}, ombre {result.Shadows:+0;-0;0}, bianchi {result.Whites:+0;-0;0}, " +
-                           $"neri {result.Blacks:+0;-0;0}, vividezza {result.Vibrance:+0;-0;0}, saturazione {result.Saturation:+0;-0;0}";
+            _status.Text = T("Automatico: esposizione {0:+0.00;-0.00;0}, contrasto {1:+0;-0;0}, luci {2:+0;-0;0}, ombre {3:+0;-0;0}, bianchi {4:+0;-0;0}, neri {5:+0;-0;0}, vividezza {6:+0;-0;0}, saturazione {7:+0;-0;0}", result.Exposure, result.Contrast, result.Highlights, result.Shadows, result.Whites, result.Blacks, result.Vibrance, result.Saturation);
         }
 
         void OnWhiteBalanceMode()
@@ -869,7 +869,7 @@ namespace PhotoStudio.Dialogs
                 case 1:
                     (s.Temperature, s.Tint) = RawDevelop.AutoWhiteBalance(_preview);
                     SetSettings(s, 1);
-                    _status.Text = $"Bilanciamento del bianco automatico: temperatura {s.Temperature:+0;-0;0}, tinta {s.Tint:+0;-0;0}";
+                    _status.Text = T("Bilanciamento del bianco automatico: temperatura {0:+0;-0;0}, tinta {1:+0;-0;0}", s.Temperature, s.Tint);
                     break;
             }
         }
@@ -895,7 +895,7 @@ namespace PhotoStudio.Dialogs
                     ? RawDevelop.ApplyGeometry(RawDevelop.Render(_preview, s), _preview.Width, _preview.Height, s, false)
                     : RawDevelop.Develop(_preview, s, maskPreview));
             }
-            catch (Exception ex) { _status.Text = "Errore di anteprima: " + ex.Message; return; }
+            catch (Exception ex) { _status.Text = T("Errore di anteprima: {0}", ex.Message); return; }
             if (my != _ticket || _closed) return;
             if (_bmp.PixelWidth != r.Width || _bmp.PixelHeight != r.Height)
             {
@@ -941,7 +941,7 @@ namespace PhotoStudio.Dialogs
         {
             _processing = true;
             _ok.IsEnabled = _cancel.IsEnabled = false;
-            _status.Text = $"Elaborazione a piena risoluzione ({_full.Width} × {_full.Height})...";
+            _status.Text = T("Elaborazione a piena risoluzione ({0} × {1})...", _full.Width, _full.Height);
             Cursor = Cursors.Wait;
             var s = _s.Clone();
             if (!_allowGeometry) StripGeometry(s);
@@ -958,7 +958,7 @@ namespace PhotoStudio.Dialogs
                 Cursor = null;
                 _ok.IsEnabled = _cancel.IsEnabled = true;
                 _status.Text = "";
-                MessageBox.Show(this, "Elaborazione non riuscita:\n" + ex.Message, "Camera Raw", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, T("Elaborazione non riuscita:\n{0}", ex.Message), "Camera Raw", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             _processing = false;

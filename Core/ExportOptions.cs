@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Core
 {
@@ -21,7 +22,7 @@ namespace PhotoStudio.Core
         public int LongSide { get; set; } = 2048;
 
         public bool Rename { get; set; }
-        public string Prefix { get; set; } = "Foto";
+        public string Prefix { get; set; } = T("Foto");
         public int StartNumber { get; set; } = 1;
         public int Digits { get; set; } = 3;
 
@@ -57,7 +58,7 @@ namespace PhotoStudio.Core
         public string FileName(string originalName, int position)
         {
             if (!Rename) return originalName;
-            string prefix = string.IsNullOrWhiteSpace(Prefix) ? "Foto" : Prefix.Trim();
+            string prefix = string.IsNullOrWhiteSpace(Prefix) ? T("Foto") : Prefix.Trim();
             foreach (char c in Path.GetInvalidFileNameChars()) prefix = prefix.Replace(c, '_');
             int n = StartNumber + position;
             return prefix + "_" + n.ToString(new string('0', Math.Clamp(Digits, 1, 6)), CultureInfo.InvariantCulture);
@@ -66,9 +67,9 @@ namespace PhotoStudio.Core
         /// <summary>A short description for tooltips and the status bar.</summary>
         public string Describe()
         {
-            string size = Resize ? $"lato lungo {LongSide} px" : "dimensione originale";
-            string name = Rename ? $"nomi {FileName("", 0)}, {FileName("", 1)}..." : "nomi originali";
-            string wm = Watermark && !string.IsNullOrWhiteSpace(WatermarkText) ? $"filigrana \"{WatermarkText.Trim()}\"" : "senza filigrana";
+            string size = Resize ? T("lato lungo {0} px", LongSide) : T("dimensione originale");
+            string name = Rename ? T("nomi {0}, {1}...", FileName("", 0), FileName("", 1)) : T("nomi originali");
+            string wm = Watermark && !string.IsNullOrWhiteSpace(WatermarkText) ? T("filigrana \"{0}\"", WatermarkText.Trim()) : T("senza filigrana");
             return $"{size} · {name} · {wm}";
         }
 

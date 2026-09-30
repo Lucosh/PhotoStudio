@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Core
 {
@@ -16,19 +17,19 @@ namespace PhotoStudio.Core
     {
         public static readonly BlendItem[] All =
         {
-            new(BlendMode.Normal, "Normale"),
-            new(BlendMode.Darken, "Scurisci"),
-            new(BlendMode.Multiply, "Moltiplica"),
-            new(BlendMode.ColorBurn, "Brucia colore"),
-            new(BlendMode.Lighten, "Schiarisci"),
-            new(BlendMode.Screen, "Scolora"),
-            new(BlendMode.ColorDodge, "Colore scherma"),
-            new(BlendMode.LinearDodge, "Scherma lineare"),
-            new(BlendMode.Overlay, "Sovrapponi"),
-            new(BlendMode.SoftLight, "Luce soffusa"),
-            new(BlendMode.HardLight, "Luce intensa"),
-            new(BlendMode.Difference, "Differenza"),
-            new(BlendMode.Exclusion, "Esclusione"),
+            new(BlendMode.Normal, T("Normale")),
+            new(BlendMode.Darken, T("Scurisci")),
+            new(BlendMode.Multiply, T("Moltiplica")),
+            new(BlendMode.ColorBurn, T("Brucia colore")),
+            new(BlendMode.Lighten, T("Schiarisci")),
+            new(BlendMode.Screen, T("Scolora")),
+            new(BlendMode.ColorDodge, T("Colore scherma")),
+            new(BlendMode.LinearDodge, T("Scherma lineare")),
+            new(BlendMode.Overlay, T("Sovrapponi")),
+            new(BlendMode.SoftLight, T("Luce soffusa")),
+            new(BlendMode.HardLight, T("Luce intensa")),
+            new(BlendMode.Difference, T("Differenza")),
+            new(BlendMode.Exclusion, T("Esclusione")),
         };
     }
 

@@ -13,6 +13,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using PhotoStudio.Core;
 using PhotoStudio.Dialogs;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio
 {
@@ -38,6 +39,9 @@ namespace PhotoStudio
         public MainWindow()
         {
             InitializeComponent();
+            Loc.TranslateTree(this);
+            Resources["Loc.ToggleLayer"] = T("Mostra/nascondi livello");   // used inside a template, which TranslateTree cannot reach
+            BuildLanguageMenu();
             DarkTitleBar.Apply(this);
 
             BlendCombo.ItemsSource = BlendItem.All;
@@ -48,7 +52,7 @@ namespace PhotoStudio
             _histTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
             _histTimer.Tick += (s, e) => { _histTimer.Stop(); UpdateHistogram(); };
             _opacityCommitTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
-            _opacityCommitTimer.Tick += (s, e) => { _opacityCommitTimer.Stop(); Commit("Opacità livello"); };
+            _opacityCommitTimer.Tick += (s, e) => { _opacityCommitTimer.Stop(); Commit(T("Opacità livello")); };
 
             var fonts = Fonts.SystemFontFamilies.Select(f => f.Source).Distinct().OrderBy(n => n).ToList();
             FontCombo.ItemsSource = fonts;
@@ -196,7 +200,7 @@ namespace PhotoStudio
 
         bool ConfirmClose(Session s)
         {
-            var r = MessageBox.Show(this, $"Salvare le modifiche apportate a \"{s.Title}\" prima di chiudere?", "PhotoStudio",
+            var r = MessageBox.Show(this, T("Salvare le modifiche apportate a \"{0}\" prima di chiudere?", s.Title), "PhotoStudio",
                 MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
             if (r == MessageBoxResult.Cancel) return false;
             if (r == MessageBoxResult.Yes) return Save(false);
@@ -237,11 +241,11 @@ namespace PhotoStudio
             {
                 case nameof(Layer.Visible):
                     Recomposite();
-                    Commit(((Layer)sender).Visible ? "Mostra livello" : "Nascondi livello");
+                    Commit(((Layer)sender).Visible ? T("Mostra livello") : T("Nascondi livello"));
                     break;
                 case nameof(Layer.Blend):
                     Recomposite();
-                    Commit("Metodo di fusione");
+                    Commit(T("Metodo di fusione"));
                     break;
                 case nameof(Layer.Opacity):
                     Recomposite();
@@ -311,14 +315,14 @@ namespace PhotoStudio
             if (S == null)
             {
                 Title = "PhotoStudio";
-                UndoMenuItem.Header = "Annulla";
-                RedoMenuItem.Header = "Ripeti";
+                UndoMenuItem.Header = T("Annulla");
+                RedoMenuItem.Header = T("Ripeti");
                 return;
             }
             Title = $"{S.DisplayTitle} @ {_zoom * 100:0.#}% ({ActiveLayer?.Name}, RGB/8) — PhotoStudio";
             var h = S.History;
-            UndoMenuItem.Header = h.CanUndo ? "Annulla " + h.Entries[h.Index].Name : "Annulla";
-            RedoMenuItem.Header = h.CanRedo ? "Ripeti " + h.Entries[h.Index + 1].Name : "Ripeti";
+            UndoMenuItem.Header = h.CanUndo ? T("Annulla {0}", h.Entries[h.Index].Name) : T("Annulla");
+            RedoMenuItem.Header = h.CanRedo ? T("Ripeti {0}", h.Entries[h.Index + 1].Name) : T("Ripeti");
         }
 
         // ================= Zoom =================
@@ -492,14 +496,14 @@ namespace PhotoStudio
         void PrimarySwatch_Click(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
-            var d = new ColorPickerDialog(this, "Selettore colore (colore di primo piano)", _primary);
+            var d = new ColorPickerDialog(this, T("Selettore colore (colore di primo piano)"), _primary);
             if (d.ShowDialog() == true) { _primary = d.SelectedColor; UpdateColorSwatches(); }
         }
 
         void SecondarySwatch_Click(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
-            var d = new ColorPickerDialog(this, "Selettore colore (colore di sfondo)", _secondary);
+            var d = new ColorPickerDialog(this, T("Selettore colore (colore di sfondo)"), _secondary);
             if (d.ShowDialog() == true) { _secondary = d.SelectedColor; UpdateColorSwatches(); }
         }
 
@@ -578,6 +582,50 @@ namespace PhotoStudio
                 if (s != S) ActivateSession(s);
                 if (!ConfirmClose(s)) { e.Cancel = true; return; }
             }
+        }
+
+        // ================= Language =================
+
+        bool _restartOnClose;
+
+        void BuildLanguageMenu()
+        {
+            // The English word stays next to the translated one, so the menu can be found in any language.
+            LanguageMenu.Header = "🌐  " + T("Lingua") + (Loc.Language == "en" ? "" : "  (Language)");
+            foreach (var (code, name) in Loc.Languages)
+            {
+                // No Tag: menu items with a Tag are commands, enabled or disabled by UpdateMenuState.
+                var item = new MenuItem { Header = name, IsChecked = code == Loc.Language };
+                item.Click += (s, e) => ChangeLanguage(code);
+                LanguageMenu.Items.Add(item);
+                _languageItems[code] = item;
+            }
+        }
+
+        readonly System.Collections.Generic.Dictionary<string, MenuItem> _languageItems = new System.Collections.Generic.Dictionary<string, MenuItem>();
+
+        void ChangeLanguage(string code)
+        {
+            if (code == Loc.Language) return;
+            try { Loc.SaveLanguage(code); }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, T("Impossibile salvare la lingua:\n{0}", ex.Message), "PhotoStudio", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            foreach (var kv in _languageItems) kv.Value.IsChecked = kv.Key == code;
+            if (MessageBox.Show(this, T("La nuova lingua verrà usata al prossimo avvio di PhotoStudio.\n\nRiavviare adesso?"), "PhotoStudio",
+                    MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+            _restartOnClose = true;
+            Close();                                  // asks to save the open documents; the user may cancel
+            if (IsVisible) _restartOnClose = false;
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            if (_restartOnClose && Environment.ProcessPath is string exe)
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = false });
         }
     }
 }

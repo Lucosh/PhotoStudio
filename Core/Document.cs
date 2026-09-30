@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Core
 {
@@ -26,7 +27,7 @@ namespace PhotoStudio.Core
         public static Document CreateBlank(int w, int h, Color? background)
         {
             var doc = new Document(w, h);
-            var layer = new Layer("Sfondo", w, h);
+            var layer = new Layer(T("Sfondo"), w, h);
             if (background is Color c) layer.Fill(c);
             layer.UpdateThumbnail();
             doc.Layers.Add(layer);
@@ -197,7 +198,7 @@ namespace PhotoStudio.Core
         {
             var px = Render(background);
             Layers.Clear();
-            var l = new Layer("Sfondo", Width, Height, px);
+            var l = new Layer(T("Sfondo"), Width, Height, px);
             l.UpdateThumbnail();
             Layers.Add(l);
         }

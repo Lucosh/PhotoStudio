@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using PhotoStudio.Core;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Dialogs
 {
@@ -19,7 +20,7 @@ namespace PhotoStudio.Dialogs
 
         static readonly (string Name, double Low, double High)[] Zones =
         {
-            ("Neri", 0, 0.12), ("Ombre", 0.08, 0.35), ("Mezzitoni", 0.3, 0.7), ("Luci", 0.62, 0.9), ("Bianchi", 0.85, 1),
+            (T("Neri"), 0, 0.12), (T("Ombre"), 0.08, 0.35), (T("Mezzitoni"), 0.3, 0.7), (T("Luci"), 0.62, 0.9), (T("Bianchi"), 0.85, 1),
         };
 
         int _maskIndex = -1;
@@ -46,56 +47,55 @@ namespace PhotoStudio.Dialogs
             var p = TabPanel();
             p.Children.Add(new TextBlock
             {
-                Text = "Ritocca solo una parte della foto. Scegli una ricetta pronta, oppure crea una maschera e usa i cursori qui sotto: " +
-                       "cambiano solo la zona scelta.",
+                Text = T("Ritocca solo una parte della foto. Scegli una ricetta pronta, oppure crea una maschera e usa i cursori qui sotto: cambiano solo la zona scelta."),
                 TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0),
             });
 
-            Section(p, "RICETTE VELOCI (UN CLIC)");
+            Section(p, T("RICETTE VELOCI (UN CLIC)"));
             var recipes = new UniformGrid { Columns = 2 };
             void Recipe(string name, string tip, Func<LocalMask> make)
             {
                 var b = new Button { Content = name, Padding = new Thickness(4, 5, 4, 5), Margin = new Thickness(0, 0, 4, 4), ToolTip = tip, HorizontalContentAlignment = HorizontalAlignment.Left };
-                b.Click += (s, e) => AddMask(make(), $"Ricetta \"{name.Substring(2)}\" applicata: la zona modificata lampeggia in rosso. Regola l'intensità con i cursori.");
+                b.Click += (s, e) => AddMask(make(), T("Ricetta \"{0}\" applicata: la zona modificata lampeggia in rosso. Regola l'intensità con i cursori.", name.Substring(2)));
                 recipes.Children.Add(b);
             }
-            Recipe("☀ Schiarisci le ombre", "Più luce solo nelle zone scure, senza bruciare il resto",
-                () => new LocalMask { Name = "Ombre più chiare", Kind = MaskKind.Luminance, Low = 0, High = 0.3, Feather = 0.15, Exposure = 0.5, Shadows = 15, Clarity = 5 });
-            Recipe("☁ Recupera le luci", "Riporta dettaglio e colore nelle zone troppo chiare",
-                () => new LocalMask { Name = "Luci recuperate", Kind = MaskKind.Luminance, Low = 0.7, High = 1, Feather = 0.12, Exposure = -0.45, Highlights = -25, Saturation = 8 });
-            Recipe("◐ Ombre più profonde", "Neri più decisi: più profondità e contrasto",
-                () => new LocalMask { Name = "Ombre profonde", Kind = MaskKind.Luminance, Low = 0, High = 0.22, Feather = 0.12, Exposure = -0.3, Contrast = 15 });
-            Recipe("🌅 Luci più calde", "Luci dorate, come al tramonto",
-                () => new LocalMask { Name = "Luci calde", Kind = MaskKind.Luminance, Low = 0.55, High = 1, Feather = 0.2, Temperature = 30, Tint = 5, Saturation = 15 });
-            Recipe("⛅ Cielo più intenso", "Sfumatura dall'alto: cielo più scuro e colorato",
-                () => new LocalMask { Name = "Cielo", Kind = MaskKind.Linear, X1 = (_s.CropL + _s.CropR) / 2, Y1 = _s.CropT, X2 = (_s.CropL + _s.CropR) / 2, Y2 = _s.CropT + (_s.CropB - _s.CropT) * 0.45, Exposure = -0.4, Saturation = 20, Contrast = 10, Temperature = -5 });
-            Recipe("◎ Luce sul soggetto", "Un alone di luce al centro che attira lo sguardo",
-                () => new LocalMask { Name = "Soggetto", Kind = MaskKind.Radial, X1 = (_s.CropL + _s.CropR) / 2, Y1 = (_s.CropT + _s.CropB) / 2, RX = 0.28 * (_s.CropR - _s.CropL), RY = 0.34 * (_s.CropB - _s.CropT), Feather = 0.7, Exposure = 0.35, Clarity = 8 });
-            Recipe("❄ Ombre più fredde", "Ombre bluastre: look cinematografico",
-                () => new LocalMask { Name = "Ombre fredde", Kind = MaskKind.Luminance, Low = 0, High = 0.35, Feather = 0.15, Temperature = -25, Saturation = 5 });
-            Recipe("▣ Bordi più scuri", "Scurisce i bordi e lascia luminoso il centro",
-                () => new LocalMask { Name = "Bordi", Kind = MaskKind.Radial, X1 = (_s.CropL + _s.CropR) / 2, Y1 = (_s.CropT + _s.CropB) / 2, RX = 0.42 * (_s.CropR - _s.CropL), RY = 0.45 * (_s.CropB - _s.CropT), Feather = 0.8, Invert = true, Exposure = -0.45 });
+            Recipe(T("☀ Schiarisci le ombre"), T("Più luce solo nelle zone scure, senza bruciare il resto"),
+                () => new LocalMask { Name = T("Ombre più chiare"), Kind = MaskKind.Luminance, Low = 0, High = 0.3, Feather = 0.15, Exposure = 0.5, Shadows = 15, Clarity = 5 });
+            Recipe(T("☁ Recupera le luci"), T("Riporta dettaglio e colore nelle zone troppo chiare"),
+                () => new LocalMask { Name = T("Luci recuperate"), Kind = MaskKind.Luminance, Low = 0.7, High = 1, Feather = 0.12, Exposure = -0.45, Highlights = -25, Saturation = 8 });
+            Recipe(T("◐ Ombre più profonde"), T("Neri più decisi: più profondità e contrasto"),
+                () => new LocalMask { Name = T("Ombre profonde"), Kind = MaskKind.Luminance, Low = 0, High = 0.22, Feather = 0.12, Exposure = -0.3, Contrast = 15 });
+            Recipe(T("🌅 Luci più calde"), T("Luci dorate, come al tramonto"),
+                () => new LocalMask { Name = T("Luci calde"), Kind = MaskKind.Luminance, Low = 0.55, High = 1, Feather = 0.2, Temperature = 30, Tint = 5, Saturation = 15 });
+            Recipe(T("⛅ Cielo più intenso"), T("Sfumatura dall'alto: cielo più scuro e colorato"),
+                () => new LocalMask { Name = T("Cielo"), Kind = MaskKind.Linear, X1 = (_s.CropL + _s.CropR) / 2, Y1 = _s.CropT, X2 = (_s.CropL + _s.CropR) / 2, Y2 = _s.CropT + (_s.CropB - _s.CropT) * 0.45, Exposure = -0.4, Saturation = 20, Contrast = 10, Temperature = -5 });
+            Recipe(T("◎ Luce sul soggetto"), T("Un alone di luce al centro che attira lo sguardo"),
+                () => new LocalMask { Name = T("Soggetto"), Kind = MaskKind.Radial, X1 = (_s.CropL + _s.CropR) / 2, Y1 = (_s.CropT + _s.CropB) / 2, RX = 0.28 * (_s.CropR - _s.CropL), RY = 0.34 * (_s.CropB - _s.CropT), Feather = 0.7, Exposure = 0.35, Clarity = 8 });
+            Recipe(T("❄ Ombre più fredde"), T("Ombre bluastre: look cinematografico"),
+                () => new LocalMask { Name = T("Ombre fredde"), Kind = MaskKind.Luminance, Low = 0, High = 0.35, Feather = 0.15, Temperature = -25, Saturation = 5 });
+            Recipe(T("▣ Bordi più scuri"), T("Scurisce i bordi e lascia luminoso il centro"),
+                () => new LocalMask { Name = T("Bordi"), Kind = MaskKind.Radial, X1 = (_s.CropL + _s.CropR) / 2, Y1 = (_s.CropT + _s.CropB) / 2, RX = 0.42 * (_s.CropR - _s.CropL), RY = 0.45 * (_s.CropB - _s.CropT), Feather = 0.8, Invert = true, Exposure = -0.45 });
             p.Children.Add(recipes);
 
-            Section(p, "CREA UNA MASCHERA");
+            Section(p, T("CREA UNA MASCHERA"));
             var add = new UniformGrid { Rows = 1 };
             void Add(string name, string tip, MaskKind kind)
             {
                 var b = new Button { Content = name, Padding = new Thickness(4, 5, 4, 5), Margin = new Thickness(0, 0, 4, 0), ToolTip = tip };
                 b.Click += (s, e) => AddMask(NewMask(kind), kind switch
                 {
-                    MaskKind.Luminance => "Zona di luce creata: scegli qui sotto quale luce ritoccare (o clicca sulla foto con il contagocce).",
-                    MaskKind.Linear => "Sfumatura lineare creata: trascina sulla foto il punto pieno (effetto massimo) e quello vuoto (fine della sfumatura).",
-                    _ => "Sfumatura radiale creata: trascinala sulla foto e allarga o stringi il cerchio con le maniglie.",
+                    MaskKind.Luminance => T("Zona di luce creata: scegli qui sotto quale luce ritoccare (o clicca sulla foto con il contagocce)."),
+                    MaskKind.Linear => T("Sfumatura lineare creata: trascina sulla foto il punto pieno (effetto massimo) e quello vuoto (fine della sfumatura)."),
+                    _ => T("Sfumatura radiale creata: trascinala sulla foto e allarga o stringi il cerchio con le maniglie."),
                 });
                 add.Children.Add(b);
             }
-            Add("+ Zona di luce", "Seleziona le zone per luminosità: solo le ombre, solo le luci...", MaskKind.Luminance);
-            Add("+ Lineare", "Sfumatura a partire da un lato: ideale per il cielo o il terreno", MaskKind.Linear);
-            Add("+ Radiale", "Cerchio o ellisse sfumati: un viso, un soggetto, un punto di luce", MaskKind.Radial);
+            Add(T("+ Zona di luce"), T("Seleziona le zone per luminosità: solo le ombre, solo le luci..."), MaskKind.Luminance);
+            Add(T("+ Lineare"), T("Sfumatura a partire da un lato: ideale per il cielo o il terreno"), MaskKind.Linear);
+            Add(T("+ Radiale"), T("Cerchio o ellisse sfumati: un viso, un soggetto, un punto di luce"), MaskKind.Radial);
             p.Children.Add(add);
 
-            Section(p, "LE TUE MASCHERE");
+            Section(p, T("LE TUE MASCHERE"));
             _maskList = new ListBox { Height = 104, Background = Res("InputBg") };
             _maskList.SelectionChanged += (s, e) =>
             {
@@ -107,26 +107,27 @@ namespace PhotoStudio.Dialogs
             };
             p.Children.Add(_maskList);
             var listButtons = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
-            var dup = new Button { Content = "Duplica", Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 6, 0) };
+            var dup = new Button { Content = T("Duplica"), Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 6, 0) };
             dup.Click += (s, e) =>
             {
                 var m = SelMask(_s);
                 if (m == null) return;
                 var c = m.Clone();
-                c.Name = m.Name + " (copia)";
+                c.Name = T("{0} (copia)", m.Name);
+                c.Auto = false;   // a copy is the user's own: Luce intelligente must not replace it
                 AddMask(c, null);
             };
-            var rename = new Button { Content = "Rinomina", Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 6, 0) };
+            var rename = new Button { Content = T("Rinomina"), Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 6, 0) };
             rename.Click += (s, e) =>
             {
                 var m = SelMask(_s);
                 if (m == null) return;
-                var dlg = new NameDialog(this, "Rinomina maschera", "Nome della maschera:", m.Name);
+                var dlg = new NameDialog(this, T("Rinomina maschera"), T("Nome della maschera:"), m.Name);
                 if (dlg.ShowDialog() != true) return;
                 m.Name = dlg.Value;
                 RefreshMasks();
             };
-            var del = new Button { Content = "Elimina", Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 6, 0) };
+            var del = new Button { Content = T("Elimina"), Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(0, 0, 6, 0) };
             del.Click += (s, e) =>
             {
                 if (SelMask(_s) == null) return;
@@ -135,11 +136,11 @@ namespace PhotoStudio.Dialogs
                 RefreshMasks();
                 Edited();
             };
-            var clear = new Button { Content = "Elimina tutte", Padding = new Thickness(8, 2, 8, 2) };
+            var clear = new Button { Content = T("Elimina tutte"), Padding = new Thickness(8, 2, 8, 2) };
             clear.Click += (s, e) =>
             {
                 if (_s.Masks.Count == 0) return;
-                if (MessageBox.Show(this, "Eliminare tutte le maschere?", "Maschere", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+                if (MessageBox.Show(this, T("Eliminare tutte le maschere?"), T("Maschere"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
                 _s.Masks.Clear();
                 _maskIndex = -1;
                 RefreshMasks();
@@ -154,7 +155,7 @@ namespace PhotoStudio.Dialogs
             // ---- editor of the selected mask
             _maskEditor = new StackPanel { Margin = new Thickness(0, 10, 0, 0) };
             var head = new DockPanel { Margin = new Thickness(0, 4, 0, 6) };
-            _maskEnabled = new CheckBox { Content = "Attiva", VerticalAlignment = VerticalAlignment.Center, ToolTip = "Spegni per vedere la foto senza questa maschera" };
+            _maskEnabled = new CheckBox { Content = T("Attiva"), VerticalAlignment = VerticalAlignment.Center, ToolTip = T("Spegni per vedere la foto senza questa maschera") };
             _maskEnabled.Click += (s, e) =>
             {
                 var m = SelMask(_s);
@@ -170,7 +171,7 @@ namespace PhotoStudio.Dialogs
             _maskEditor.Children.Add(head);
 
             _zonePanel = new StackPanel();
-            _zonePanel.Children.Add(new TextBlock { Text = "Quale luce vuoi ritoccare?", Margin = new Thickness(0, 0, 0, 4) });
+            _zonePanel.Children.Add(new TextBlock { Text = T("Quale luce vuoi ritoccare?"), Margin = new Thickness(0, 0, 0, 4) });
             var zones = new UniformGrid { Rows = 1 };
             for (int i = 0; i < Zones.Length; i++)
             {
@@ -181,42 +182,42 @@ namespace PhotoStudio.Dialogs
                     var m = SelMask(_s);
                     if (m == null) return;
                     (m.Low, m.High, m.Feather) = (Zones[k].Low, Zones[k].High, 0.12);
-                    AfterZoneChange($"Zona \"{Zones[k].Name}\": in rosso le parti della foto che verranno ritoccate.");
+                    AfterZoneChange(T("Zona \"{0}\": in rosso le parti della foto che verranno ritoccate.", Zones[k].Name));
                 };
                 zones.Children.Add(_zoneButtons[k]);
             }
             _zonePanel.Children.Add(zones);
             _rangeBar = new RangeBar();
             _zonePanel.Children.Add(_rangeBar);
-            var pick = new Button { Content = "🖉  Scegli il tono cliccando sulla foto", Padding = new Thickness(6, 4, 6, 4), Margin = new Thickness(0, 0, 0, 4) };
+            var pick = new Button { Content = T("🖉  Scegli il tono cliccando sulla foto"), Padding = new Thickness(6, 4, 6, 4), Margin = new Thickness(0, 0, 0, 4) };
             pick.Click += (s, e) =>
             {
                 _picking = !_picking;
-                _status.Text = _picking ? "Clicca sulla foto sul punto da ritoccare: verranno scelti tutti i toni simili." : "";
+                _status.Text = _picking ? T("Clicca sulla foto sul punto da ritoccare: verranno scelti tutti i toni simili.") : "";
                 UpdateOverlay();
             };
             _zonePanel.Children.Add(pick);
-            var fine = new Expander { Header = "Regolazione fine della zona", Foreground = Res("TextBrush"), Margin = new Thickness(0, 2, 0, 0) };
+            var fine = new Expander { Header = T("Regolazione fine della zona"), Foreground = Res("TextBrush"), Margin = new Thickness(0, 2, 0, 0) };
             var fineBody = new StackPanel { Margin = new Thickness(0, 4, 0, 0) };
-            Row(fineBody, "Da", 0, 100, 0, x => (SelMask(x)?.Low ?? 0) * 100, (x, v) => { var m = SelMask(x); if (m != null) m.Low = Math.Min(v / 100, m.High - 0.01); },
-                changed: UpdateZoneUi, tip: "Tono più scuro incluso (0 = nero)");
-            Row(fineBody, "A", 0, 100, 0, x => (SelMask(x)?.High ?? 1) * 100, (x, v) => { var m = SelMask(x); if (m != null) m.High = Math.Max(v / 100, m.Low + 0.01); },
-                reset: 100, changed: UpdateZoneUi, tip: "Tono più chiaro incluso (100 = bianco)");
-            Row(fineBody, "Morbidezza", 1, 50, 0, x => (SelMask(x)?.Feather ?? 0.15) * 100, (x, v) => { var m = SelMask(x); if (m != null) m.Feather = v / 100; },
-                reset: 12, changed: UpdateZoneUi, tip: "Quanto è graduale il passaggio ai toni esclusi");
+            Row(fineBody, T("Da"), 0, 100, 0, x => (SelMask(x)?.Low ?? 0) * 100, (x, v) => { var m = SelMask(x); if (m != null) m.Low = Math.Min(v / 100, m.High - 0.01); },
+                changed: UpdateZoneUi, tip: T("Tono più scuro incluso (0 = nero)"));
+            Row(fineBody, T("A"), 0, 100, 0, x => (SelMask(x)?.High ?? 1) * 100, (x, v) => { var m = SelMask(x); if (m != null) m.High = Math.Max(v / 100, m.Low + 0.01); },
+                reset: 100, changed: UpdateZoneUi, tip: T("Tono più chiaro incluso (100 = bianco)"));
+            Row(fineBody, T("Morbidezza"), 1, 50, 0, x => (SelMask(x)?.Feather ?? 0.15) * 100, (x, v) => { var m = SelMask(x); if (m != null) m.Feather = v / 100; },
+                reset: 12, changed: UpdateZoneUi, tip: T("Quanto è graduale il passaggio ai toni esclusi"));
             fine.Content = fineBody;
             _zonePanel.Children.Add(fine);
             _maskEditor.Children.Add(_zonePanel);
 
             _linearPanel = new StackPanel();
-            _linearPanel.Children.Add(Hint("Sulla foto: ● = effetto pieno, ○ = fine della sfumatura. Trascina i due punti; il quadratino al centro sposta tutta la sfumatura."));
+            _linearPanel.Children.Add(Hint(T("Sulla foto: ● = effetto pieno, ○ = fine della sfumatura. Trascina i due punti; il quadratino al centro sposta tutta la sfumatura.")));
             _maskEditor.Children.Add(_linearPanel);
 
             _radialPanel = new StackPanel();
-            _radialPanel.Children.Add(Hint("Sulla foto: trascina il cerchio per spostarlo, le maniglie bianche per allargarlo o stringerlo."));
-            Row(_radialPanel, "Sfumatura", 0, 100, 0, x => (SelMask(x)?.Feather ?? 0.5) * 100, (x, v) => { var m = SelMask(x); if (m != null) m.Feather = v / 100; },
-                reset: 50, changed: UpdateOverlay, tip: "0 = bordo netto, 100 = passaggio molto morbido");
-            _maskInvert = new CheckBox { Content = "Modifica fuori dal cerchio (inverti)", Margin = new Thickness(0, 4, 0, 0) };
+            _radialPanel.Children.Add(Hint(T("Sulla foto: trascina il cerchio per spostarlo, le maniglie bianche per allargarlo o stringerlo.")));
+            Row(_radialPanel, T("Sfumatura"), 0, 100, 0, x => (SelMask(x)?.Feather ?? 0.5) * 100, (x, v) => { var m = SelMask(x); if (m != null) m.Feather = v / 100; },
+                reset: 50, changed: UpdateOverlay, tip: T("0 = bordo netto, 100 = passaggio molto morbido"));
+            _maskInvert = new CheckBox { Content = T("Modifica fuori dal cerchio (inverti)"), Margin = new Thickness(0, 4, 0, 0) };
             _maskInvert.Click += (s, e) =>
             {
                 var m = SelMask(_s);
@@ -227,25 +228,25 @@ namespace PhotoStudio.Dialogs
             _radialPanel.Children.Add(_maskInvert);
             _maskEditor.Children.Add(_radialPanel);
 
-            _maskShow = new CheckBox { Content = "Mostra in rosso la zona modificata", Margin = new Thickness(0, 8, 0, 0) };
+            _maskShow = new CheckBox { Content = T("Mostra in rosso la zona modificata"), Margin = new Thickness(0, 8, 0, 0) };
             _maskShow.Click += (s, e) => Schedule();
             _maskEditor.Children.Add(_maskShow);
 
-            Section(_maskEditor, "COSA CAMBIARE IN QUESTA ZONA");
+            Section(_maskEditor, T("COSA CAMBIARE IN QUESTA ZONA"));
             LocalMask M(RawSettings x) => SelMask(x);
-            Row(_maskEditor, "Intensità", 0, 100, 0, x => M(x)?.Amount ?? 100, (x, v) => { if (M(x) != null) M(x).Amount = v; }, reset: 100, tip: "Quanto è forte tutta la maschera");
-            Row(_maskEditor, "Luce", -4, 4, 2, x => M(x)?.Exposure ?? 0, (x, v) => { if (M(x) != null) M(x).Exposure = v; }, tip: "Più chiaro o più scuro (esposizione)");
-            Row(_maskEditor, "Contrasto", -100, 100, 0, x => M(x)?.Contrast ?? 0, (x, v) => { if (M(x) != null) M(x).Contrast = v; });
-            Row(_maskEditor, "Luci", -100, 100, 0, x => M(x)?.Highlights ?? 0, (x, v) => { if (M(x) != null) M(x).Highlights = v; }, tip: "Solo le parti chiare della zona");
-            Row(_maskEditor, "Ombre", -100, 100, 0, x => M(x)?.Shadows ?? 0, (x, v) => { if (M(x) != null) M(x).Shadows = v; }, tip: "Solo le parti scure della zona");
-            Row(_maskEditor, "Calore", -100, 100, 0, x => M(x)?.Temperature ?? 0, (x, v) => { if (M(x) != null) M(x).Temperature = v; },
-                new LinearGradientBrush(Color.FromRgb(0x3C, 0x6E, 0xD8), Color.FromRgb(0xE8, 0xC8, 0x30), 0), tip: "Più freddo (blu) o più caldo (giallo)");
-            Row(_maskEditor, "Verde / magenta", -100, 100, 0, x => M(x)?.Tint ?? 0, (x, v) => { if (M(x) != null) M(x).Tint = v; },
+            Row(_maskEditor, T("Intensità"), 0, 100, 0, x => M(x)?.Amount ?? 100, (x, v) => { if (M(x) != null) M(x).Amount = v; }, reset: 100, tip: T("Quanto è forte tutta la maschera"));
+            Row(_maskEditor, T("Luce"), -4, 4, 2, x => M(x)?.Exposure ?? 0, (x, v) => { if (M(x) != null) M(x).Exposure = v; }, tip: T("Più chiaro o più scuro (esposizione)"));
+            Row(_maskEditor, T("Contrasto"), -100, 100, 0, x => M(x)?.Contrast ?? 0, (x, v) => { if (M(x) != null) M(x).Contrast = v; });
+            Row(_maskEditor, T("Luci"), -100, 100, 0, x => M(x)?.Highlights ?? 0, (x, v) => { if (M(x) != null) M(x).Highlights = v; }, tip: T("Solo le parti chiare della zona"));
+            Row(_maskEditor, T("Ombre"), -100, 100, 0, x => M(x)?.Shadows ?? 0, (x, v) => { if (M(x) != null) M(x).Shadows = v; }, tip: T("Solo le parti scure della zona"));
+            Row(_maskEditor, T("Calore"), -100, 100, 0, x => M(x)?.Temperature ?? 0, (x, v) => { if (M(x) != null) M(x).Temperature = v; },
+                new LinearGradientBrush(Color.FromRgb(0x3C, 0x6E, 0xD8), Color.FromRgb(0xE8, 0xC8, 0x30), 0), tip: T("Più freddo (blu) o più caldo (giallo)"));
+            Row(_maskEditor, T("Verde / magenta"), -100, 100, 0, x => M(x)?.Tint ?? 0, (x, v) => { if (M(x) != null) M(x).Tint = v; },
                 new LinearGradientBrush(Color.FromRgb(0x3C, 0xB0, 0x4A), Color.FromRgb(0xC8, 0x3C, 0xC0), 0));
-            Row(_maskEditor, "Colore", -100, 100, 0, x => M(x)?.Saturation ?? 0, (x, v) => { if (M(x) != null) M(x).Saturation = v; }, tip: "Colori più vivi o più spenti");
-            Row(_maskEditor, "Dettaglio", -100, 100, 0, x => M(x)?.Clarity ?? 0, (x, v) => { if (M(x) != null) M(x).Clarity = v; }, tip: "Più incisivo (chiarezza) o più morbido");
+            Row(_maskEditor, T("Colore"), -100, 100, 0, x => M(x)?.Saturation ?? 0, (x, v) => { if (M(x) != null) M(x).Saturation = v; }, tip: T("Colori più vivi o più spenti"));
+            Row(_maskEditor, T("Dettaglio"), -100, 100, 0, x => M(x)?.Clarity ?? 0, (x, v) => { if (M(x) != null) M(x).Clarity = v; }, tip: T("Più incisivo (chiarezza) o più morbido"));
             p.Children.Add(_maskEditor);
-            p.Children.Add(Hint("Le maschere si salvano con la foto: puoi copiarle su altre foto (Alt+Maiusc+C / V) o metterle in un preset."));
+            p.Children.Add(Hint(T("Le maschere si salvano con la foto: puoi copiarle su altre foto (Alt+Maiusc+C / V) o metterle in un preset.")));
 
             _flashTimer.Tick += (s, e) => { _flashTimer.Stop(); _maskFlash = false; Schedule(); };
             _overlay.MouseLeftButtonDown += Mask_Down;
@@ -260,9 +261,9 @@ namespace PhotoStudio.Dialogs
             double cx = (_s.CropL + _s.CropR) / 2, cy = (_s.CropT + _s.CropB) / 2, cw = _s.CropR - _s.CropL, ch = _s.CropB - _s.CropT;
             return kind switch
             {
-                MaskKind.Luminance => new LocalMask { Name = "Zona di luce " + n, Kind = kind, Low = 0.08, High = 0.35, Feather = 0.12 },
-                MaskKind.Linear => new LocalMask { Name = "Lineare " + n, Kind = kind, X1 = cx, Y1 = _s.CropT, X2 = cx, Y2 = _s.CropT + ch * 0.5 },
-                _ => new LocalMask { Name = "Radiale " + n, Kind = kind, X1 = cx, Y1 = cy, RX = 0.25 * cw, RY = 0.3 * ch, Feather = 0.5 },
+                MaskKind.Luminance => new LocalMask { Name = T("Zona di luce {0}", n), Kind = kind, Low = 0.08, High = 0.35, Feather = 0.12 },
+                MaskKind.Linear => new LocalMask { Name = T("Lineare {0}", n), Kind = kind, X1 = cx, Y1 = _s.CropT, X2 = cx, Y2 = _s.CropT + ch * 0.5 },
+                _ => new LocalMask { Name = T("Radiale {0}", n), Kind = kind, X1 = cx, Y1 = cy, RX = 0.25 * cw, RY = 0.3 * ch, Feather = 0.5 },
             };
         }
 
@@ -305,7 +306,7 @@ namespace PhotoStudio.Dialogs
         {
             _maskListLoading = true;
             _maskList.ItemsSource = _s.Masks.Select(m =>
-                $"{(m.Enabled ? "●" : "○")}  {m.Name}   —   {(m.Kind == MaskKind.Luminance ? "zona di luce" : m.Kind == MaskKind.Linear ? "lineare" : "radiale")}").ToList();
+                $"{(m.Enabled ? "●" : "○")}  {m.Name}   —   {(m.Kind == MaskKind.Luminance ? T("zona di luce") : m.Kind == MaskKind.Linear ? T("lineare") : T("radiale"))}").ToList();
             _maskList.SelectedIndex = _maskIndex;
             _maskListLoading = false;
         }
@@ -508,7 +509,7 @@ namespace PhotoStudio.Dialogs
             m.Low = L < 0.15 ? 0 : Math.Max(0, L - 0.12);
             m.High = L > 0.85 ? 1 : Math.Min(1, L + 0.12);
             m.Feather = 0.12;
-            AfterZoneChange($"Scelti i toni simili al punto cliccato (luminosità {L * 100:0}%). In rosso le zone che verranno ritoccate.");
+            AfterZoneChange(T("Scelti i toni simili al punto cliccato (luminosità {0:0}%). In rosso le zone che verranno ritoccate.", L * 100));
         }
     }
 }

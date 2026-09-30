@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using PhotoStudio.Core;
 using PhotoStudio.Dialogs;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio
 {
@@ -85,7 +86,7 @@ namespace PhotoStudio
             if (dlg.ShowDialog() == true)
             {
                 Preview(dlg.Luts);
-                Commit("Curve");
+                Commit(T("Curve"));
             }
             else
             {
@@ -143,7 +144,7 @@ namespace PhotoStudio
                 {
                     (int Width, int Height, byte[] Pixels) result;
                     using (Busy()) result = RawDevelop.Develop(OriginalOf(s), settings);
-                    ReplaceDeveloped(result.Width, result.Height, result.Pixels, "Applica impostazioni");
+                    ReplaceDeveloped(result.Width, result.Height, result.Pixels, T("Applica impostazioni"));
                     MarkDeveloped(s, settings);
                 }
                 else
@@ -156,19 +157,19 @@ namespace PhotoStudio
                     var filter = RawSettings.Default(false).MergeFrom(pasted, groups & ~SettingsGroups.Geometry);
                     using (Busy()) layer.Pixels = ImageOps.ApplyMask(original, RawDevelop.Render(RawImage.FromBgra(original, Doc.Width, Doc.Height), filter), S.Selection);
                     Recomposite();
-                    Commit("Applica impostazioni");
-                    if (!quiet) Status("La foto aveva già altre modifiche: impostazioni applicate al livello attivo come filtro (Ctrl+Z per annullare).");
+                    Commit(T("Applica impostazioni"));
+                    if (!quiet) Status(T("La foto aveva già altre modifiche: impostazioni applicate al livello attivo come filtro (Ctrl+Z per annullare)."));
                     return true;
                 }
             }
             catch (Exception ex)
             {
-                if (!quiet) MessageBox.Show(this, "Impossibile applicare le impostazioni:\n" + ex.Message, "Applica impostazioni", MessageBoxButton.OK, MessageBoxImage.Warning);
+                if (!quiet) MessageBox.Show(this, T("Impossibile applicare le impostazioni:\n{0}", ex.Message), T("Applica impostazioni"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return false;
             }
             var item = BatchItemOf(s);
             if (item != null) { item.Settings = settings.Clone(); SaveBatchState(); }
-            if (!quiet) Status("Impostazioni applicate: " + settings.Describe() + "   (Ctrl+Z per annullare)");
+            if (!quiet) Status(T("Impostazioni applicate: {0}   (Ctrl+Z per annullare)", settings.Describe()));
             return true;
         }
 
@@ -177,30 +178,30 @@ namespace PhotoStudio
             RawImage raw;
             try
             {
-                Status("Decodifica del file RAW in corso: " + System.IO.Path.GetFileName(path) + "...");
+                Status(T("Decodifica del file RAW in corso: {0}...", System.IO.Path.GetFileName(path)));
                 Dispatcher.Invoke(System.Windows.Threading.DispatcherPriority.Render, new Action(() => { }));
                 using (Busy()) raw = RawImage.Load(path);
             }
             catch (Exception ex)
             {
                 Status("");
-                MessageBox.Show(this, $"Impossibile aprire il file RAW:\n{path}\n\n{ex.Message}", "PhotoStudio", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, T("Impossibile aprire il file RAW:\n{0}\n\n{1}", path, ex.Message), "PhotoStudio", MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
             Status("");
-            var dlg = new CameraRawDialog(this, raw, System.IO.Path.GetFileName(path), "Apri immagine", initial: initial);
+            var dlg = new CameraRawDialog(this, raw, System.IO.Path.GetFileName(path), T("Apri immagine"), initial: initial);
             if (dlg.ShowDialog() != true || dlg.Result == null) return null;
 
             var doc = new Document(dlg.ResultWidth, dlg.ResultHeight);
-            var layer = new Layer("Sfondo", dlg.ResultWidth, dlg.ResultHeight, dlg.Result);
+            var layer = new Layer(T("Sfondo"), dlg.ResultWidth, dlg.ResultHeight, dlg.Result);
             layer.UpdateThumbnail();
             doc.Layers.Add(layer);
             // FilePath stays empty on purpose: "Salva" must never overwrite the original RAW file.
             var s = new Session(doc, System.IO.Path.GetFileName(path)) { SourcePath = path };
-            s.History.Push("Apri (Camera Raw)", doc.Snapshot(0, null));
+            s.History.Push(T("Apri (Camera Raw)"), doc.Snapshot(0, null));
             MarkDeveloped(s, dlg.Settings);
             AddSession(s);
-            Status($"Sviluppato {System.IO.Path.GetFileName(path)}: {dlg.Settings.Describe()}");
+            Status(T("Sviluppato {0}: {1}", System.IO.Path.GetFileName(path), dlg.Settings.Describe()));
             return s;
         }
 
@@ -219,8 +220,8 @@ namespace PhotoStudio
             }
             layer.Pixels = ImageOps.ApplyMask(original, result, S.Selection);
             Recomposite();
-            Commit("Miglioramento automatico");
-            Status("Miglioramento automatico: " + settings.Describe() + "   (Ctrl+Z per annullare)");
+            Commit(T("Miglioramento automatico"));
+            Status(T("Miglioramento automatico: {0}   (Ctrl+Z per annullare)", settings.Describe()));
         }
 
         /// <param name="startTab">Camera Raw tab to open (e.g. "Maschere").</param>
@@ -237,12 +238,12 @@ namespace PhotoStudio
             RawImage linear;
             using (Busy()) linear = RawImage.FromBgra(original, Doc.Width, Doc.Height);
             // On a layer the size cannot change: no straighten/crop here.
-            var dlg = new CameraRawDialog(this, linear, (focusAi ? "Modifica con AI — " : "Filtro — ") + layer.Name, "OK", focusAi: focusAi,
+            var dlg = new CameraRawDialog(this, linear, (focusAi ? T("Modifica con AI — ") : T("Filtro — ")) + layer.Name, "OK", focusAi: focusAi,
                                           allowGeometry: false, startTab: startTab);
             if (dlg.ShowDialog() != true || dlg.Result == null) return;
             layer.Pixels = ImageOps.ApplyMask(original, dlg.Result, S.Selection);
             Recomposite();
-            Commit(focusAi ? "Modifica con AI" : "Filtro Camera Raw");
+            Commit(focusAi ? T("Modifica con AI") : T("Filtro Camera Raw"));
         }
 
         /// <summary>
@@ -259,28 +260,28 @@ namespace PhotoStudio
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Impossibile rileggere l'originale:\n" + ex.Message, "Camera Raw", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(this, T("Impossibile rileggere l'originale:\n{0}", ex.Message), "Camera Raw", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             string name = System.IO.Path.GetFileName(s.SourcePath);
-            var dlg = new CameraRawDialog(this, src, (focusAi ? "Modifica con AI — " : "") + name, "OK", focusAi: focusAi, initial: s.RawSettings, startTab: startTab);
+            var dlg = new CameraRawDialog(this, src, (focusAi ? T("Modifica con AI — ") : "") + name, "OK", focusAi: focusAi, initial: s.RawSettings, startTab: startTab);
             if (dlg.ShowDialog() != true || dlg.Result == null) return;
-            ReplaceDeveloped(dlg.ResultWidth, dlg.ResultHeight, dlg.Result, focusAi ? "Modifica con AI" : "Camera Raw");
+            ReplaceDeveloped(dlg.ResultWidth, dlg.ResultHeight, dlg.Result, focusAi ? T("Modifica con AI") : "Camera Raw");
             MarkDeveloped(s, dlg.Settings);
             var item = BatchItemOf(s);
             if (item != null) { item.Settings = dlg.Settings; SaveBatchState(); }
-            Status($"Sviluppato {name}: {dlg.Settings.Describe()}");
+            Status(T("Sviluppato {0}: {1}", name, dlg.Settings.Describe()));
         }
 
         void TransformLayerDialog()
         {
-            RunFilter("Trasforma livello",
+            RunFilter(T("Trasforma livello"),
                 new[]
                 {
-                    new ParamSpec("Scala %", 1, 400, 100, 1),
-                    new ParamSpec("Rotazione °", -180, 180, 0, 1),
-                    new ParamSpec("Sposta X (px)", -Doc.Width, Doc.Width, 0),
-                    new ParamSpec("Sposta Y (px)", -Doc.Height, Doc.Height, 0),
+                    new ParamSpec(T("Scala %"), 1, 400, 100, 1),
+                    new ParamSpec(T("Rotazione °"), -180, 180, 0, 1),
+                    new ParamSpec(T("Sposta X (px)"), -Doc.Width, Doc.Width, 0),
+                    new ParamSpec(T("Sposta Y (px)"), -Doc.Height, Doc.Height, 0),
                 },
                 (s, w, h, v) => ImageOps.TransformLayer(s, w, h, v[0] / 100, v[1], v[2], v[3]),
                 useSelection: false);
@@ -313,7 +314,7 @@ namespace PhotoStudio
             if (d.ShowDialog() != true) return;
             int ow = Doc.Width, oh = Doc.Height, nw = d.NewWidth, nh = d.NewHeight;
             if (nw == ow && nh == oh) return;
-            TransformImage(px => ImageOps.Resize(px, ow, oh, nw, nh), nw, nh, "Dimensione immagine");
+            TransformImage(px => ImageOps.Resize(px, ow, oh, nw, nh), nw, nh, T("Dimensione immagine"));
         }
 
         void CanvasSize()
@@ -324,7 +325,7 @@ namespace PhotoStudio
             if (nw == ow && nh == oh) return;
             int ox = (nw - ow) * d.AnchorX / 2, oy = (nh - oh) * d.AnchorY / 2;
             var r = new Int32Rect(-ox, -oy, nw, nh);
-            TransformImage(px => ImageOps.Crop(px, ow, oh, r), nw, nh, "Dimensione quadro");
+            TransformImage(px => ImageOps.Crop(px, ow, oh, r), nw, nh, T("Dimensione quadro"));
         }
 
         void CropTo(Int32Rect r, string name)
@@ -362,11 +363,11 @@ namespace PhotoStudio
             try
             {
                 ImageIO.CopyToClipboard(w, h, px);
-                Status(merged ? "Copia unita negli appunti." : "Copiato negli appunti.");
+                Status(merged ? T("Copia unita negli appunti.") : T("Copiato negli appunti."));
             }
             catch (Exception ex)
             {
-                Status("Impossibile copiare: " + ex.Message);
+                Status(T("Impossibile copiare: {0}", ex.Message));
             }
         }
 
@@ -374,35 +375,35 @@ namespace PhotoStudio
         {
             if (S.Selection == null) return;
             Copy(false);
-            ClearPixels("Taglia");
+            ClearPixels(T("Taglia"));
         }
 
         void Paste()
         {
             var img = ImageIO.GetClipboardImage();
-            if (img == null) { Status("Gli appunti non contengono un'immagine."); return; }
+            if (img == null) { Status(T("Gli appunti non contengono un'immagine.")); return; }
             var (w, h, px) = img.Value;
             if (S == null)
             {
                 var doc = new Document(w, h);
-                var layer = new Layer("Livello 1", w, h, px);
+                var layer = new Layer(T("Livello 1"), w, h, px);
                 layer.UpdateThumbnail();
                 doc.Layers.Add(layer);
-                var s = new Session(doc, $"Senza titolo-{_untitled++}");
-                s.History.Push("Incolla", doc.Snapshot(0, null));
+                var s = new Session(doc, T("Senza titolo-{0}", _untitled++));
+                s.History.Push(T("Incolla"), doc.Snapshot(0, null));
                 AddSession(s);
                 return;
             }
-            PlaceImage(w, h, px, NextLayerName("Livello"), "Incolla", false);
+            PlaceImage(w, h, px, NextLayerName(T("Livello")), T("Incolla"), false);
         }
 
-        void ClearSelectionPixels() => ClearPixels("Cancella");
+        void ClearSelectionPixels() => ClearPixels(T("Cancella"));
 
         void ClearPixels(string name)
         {
             var layer = ActiveLayer;
             if (layer == null) return;
-            if (S.Selection == null) { Status("Nessuna selezione: seleziona prima l'area da cancellare."); return; }
+            if (S.Selection == null) { Status(T("Nessuna selezione: seleziona prima l'area da cancellare.")); return; }
             Painting.ClearArea(layer, S.Selection);
             Recomposite();
             Commit(name);
@@ -414,17 +415,17 @@ namespace PhotoStudio
             if (layer == null) return;
             using (Busy()) Painting.FillArea(layer, c, S.Selection);
             Recomposite();
-            Commit("Riempi");
+            Commit(T("Riempi"));
         }
 
         void FeatherSelection()
         {
-            if (S.Selection == null) { Status("Nessuna selezione attiva."); return; }
-            var d = new ParamDialog(this, "Sfuma selezione", new[] { new ParamSpec("Raggio sfumatura (pixel)", 0.5, 250, 5, 1) }, null);
+            if (S.Selection == null) { Status(T("Nessuna selezione attiva.")); return; }
+            var d = new ParamDialog(this, T("Sfuma selezione"), new[] { new ParamSpec(T("Raggio sfumatura (pixel)"), 0.5, 250, 5, 1) }, null);
             if (d.ShowDialog() != true) return;
             Selection s;
             using (Busy()) s = S.Selection.Feathered(d.Values[0]);
-            SetSelection(NullIfEmpty(s), "Sfuma");
+            SetSelection(NullIfEmpty(s), T("Sfuma"));
         }
 
         // ================= Layers =================
@@ -448,7 +449,7 @@ namespace PhotoStudio
             Commit(historyName);
         }
 
-        void NewLayer() => InsertLayer(new Layer(NextLayerName("Livello"), Doc.Width, Doc.Height), "Nuovo livello");
+        void NewLayer() => InsertLayer(new Layer(NextLayerName(T("Livello")), Doc.Width, Doc.Height), T("Nuovo livello"));
 
         void DuplicateLayer()
         {
@@ -459,34 +460,34 @@ namespace PhotoStudio
                 var px = (byte[])layer.Pixels.Clone();
                 var m = S.Selection.Mask;
                 for (int p = 0; p < m.Length; p++) px[p * 4 + 3] = (byte)(px[p * 4 + 3] * m[p] / 255);
-                InsertLayer(new Layer(NextLayerName("Livello"), Doc.Width, Doc.Height, px), "Livello tramite copia");
+                InsertLayer(new Layer(NextLayerName(T("Livello")), Doc.Width, Doc.Height, px), T("Livello tramite copia"));
             }
             else
             {
-                InsertLayer(layer.Clone(layer.Name + " copia"), "Duplica livello");
+                InsertLayer(layer.Clone(T("{0} copia", layer.Name)), T("Duplica livello"));
             }
         }
 
         void DeleteLayer()
         {
-            if (Doc.Layers.Count <= 1) { Status("Impossibile eliminare l'unico livello del documento."); return; }
+            if (Doc.Layers.Count <= 1) { Status(T("Impossibile eliminare l'unico livello del documento.")); return; }
             int idx = ActiveIndex;
             Doc.Layers.RemoveAt(idx);
             SelectLayer(Math.Min(idx, Doc.Layers.Count - 1));
             Recomposite();
-            Commit("Elimina livello");
+            Commit(T("Elimina livello"));
         }
 
         void RenameLayer()
         {
             var layer = ActiveLayer;
             if (layer == null) return;
-            var d = new InputDialog(this, "Rinomina livello", "Nome:", layer.Name);
+            var d = new InputDialog(this, T("Rinomina livello"), T("Nome:"), layer.Name);
             if (d.ShowDialog() != true) return;
             string name = d.Value.Trim();
             if (name.Length == 0 || name == layer.Name) return;
             layer.Name = name;
-            Commit("Rinomina livello");
+            Commit(T("Rinomina livello"));
         }
 
         void LayersList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -506,7 +507,7 @@ namespace PhotoStudio
             Doc.Layers.Move(idx, ni);
             SelectLayer(ni);
             Recomposite();
-            Commit(dir < 0 ? "Porta avanti" : "Porta indietro");
+            Commit(dir < 0 ? T("Porta avanti") : T("Porta indietro"));
         }
 
         void MergeDown()
@@ -516,7 +517,7 @@ namespace PhotoStudio
             using (Busy()) idx = Doc.MergeDown(idx);
             SelectLayer(idx);
             Recomposite();
-            Commit("Unisci sotto");
+            Commit(T("Unisci sotto"));
         }
 
         void MergeVisible()
@@ -534,7 +535,7 @@ namespace PhotoStudio
             Doc.Layers.Insert(newIdx, merged);
             SelectLayer(newIdx);
             Recomposite();
-            Commit("Unisci visibili");
+            Commit(T("Unisci visibili"));
         }
 
         void Flatten()
@@ -542,7 +543,7 @@ namespace PhotoStudio
             using (Busy()) Doc.Flatten(Colors.White);
             SelectLayer(0);
             Recomposite();
-            Commit("Appiattisci");
+            Commit(T("Appiattisci"));
         }
     }
 }

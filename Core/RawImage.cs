@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Sdcb.LibRaw;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Core
 {
@@ -54,12 +55,12 @@ namespace PhotoStudio.Core
                     return new RawImage
                     {
                         Width = img.Width, Height = img.Height, Data = img.Data, SceneReferred = false,
-                        Camera = "Decodificato con il codec RAW di Windows", Info = "",
+                        Camera = T("Decodificato con il codec RAW di Windows"), Info = "",
                     };
                 }
                 catch
                 {
-                    throw new IOException("Impossibile decodificare il file RAW: " + libRawError.Message, libRawError);
+                    throw new IOException(T("Impossibile decodificare il file RAW: {0}", libRawError.Message), libRawError);
                 }
             }
         }

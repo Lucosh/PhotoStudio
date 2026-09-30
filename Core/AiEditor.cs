@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Core
 {
@@ -54,7 +55,10 @@ namespace PhotoStudio.Core
             ("sharpening", s => s.Sharpening, (s, v) => s.Sharpening = v, 0, 150),
         };
 
-        internal const string SystemPrompt =
+        /// <summary>Instructions for the AI; the explanation is requested in the interface language.</summary>
+        internal static string SystemPrompt => SystemPromptTemplate.Replace("{language}", Loc.EnglishName);
+
+        const string SystemPromptTemplate =
 @"You are an expert photo editor operating the develop sliders of a RAW editor similar to Adobe Camera Raw.
 You never edit pixels yourself: you only choose slider values, and the application's deterministic engine renders the photo.
 
@@ -79,7 +83,7 @@ Guidelines:
 - With an instruction, follow it faithfully; keep the result technically sound unless the user explicitly asks for an extreme or stylised look.
 - If the photo already looks good, make small refinements rather than large changes.
 - Keep sharpening modest (about 0-30 for 8-bit images, 20-50 for RAW) and lower it for noisy, high-ISO photos.
-- The explanation must be 1-3 short sentences in Italian, addressed to the user, saying what you changed and why.";
+- The explanation must be 1-3 short sentences in {language}, addressed to the user, saying what you changed and why.";
 
         public static string DisplayName(AiProvider p) => p switch
         {
@@ -97,12 +101,12 @@ Guidelines:
                 _ => OllamaProvider.SuggestAsync(request, settings.OllamaUrl, settings.OllamaModel, cancellationToken),
             };
 
-        /// <summary>Null when the chosen provider is ready to use, otherwise what is missing (in Italian).</summary>
+        /// <summary>Null when the chosen provider is ready to use, otherwise what is missing.</summary>
         public static string MissingConfiguration(AiSettings s) => s.Provider switch
         {
-            AiProvider.Claude when string.IsNullOrWhiteSpace(s.ResolveKey(AiProvider.Claude)) => "Manca la chiave API di Claude.",
-            AiProvider.Gemini when string.IsNullOrWhiteSpace(s.ResolveKey(AiProvider.Gemini)) => "Manca la chiave API di Gemini.",
-            AiProvider.Ollama when string.IsNullOrWhiteSpace(s.OllamaModel) => "Scegli il modello di Ollama da usare.",
+            AiProvider.Claude when string.IsNullOrWhiteSpace(s.ResolveKey(AiProvider.Claude)) => T("Manca la chiave API di Claude."),
+            AiProvider.Gemini when string.IsNullOrWhiteSpace(s.ResolveKey(AiProvider.Gemini)) => T("Manca la chiave API di Gemini."),
+            AiProvider.Ollama when string.IsNullOrWhiteSpace(s.OllamaModel) => T("Scegli il modello di Ollama da usare."),
             _ => null,
         };
 
@@ -114,7 +118,7 @@ Guidelines:
                 : "8-bit image (JPEG/PNG/layer)";
             string request = string.IsNullOrWhiteSpace(r.Instruction)
                 ? "No specific instruction: apply the best natural edit for this photo."
-                : "User instruction (in Italian): \"" + r.Instruction.Trim() + "\"";
+                : "User instruction (in " + Loc.EnglishName + "): \"" + r.Instruction.Trim() + "\"";
             return
                 $"Photo: {r.PhotoInfo}\nSource: {source}\nStatistics of the current rendering: {r.Stats}\n" +
                 $"Current slider values: {currentJson}\n\n{request}\n\n" +
@@ -145,11 +149,11 @@ Guidelines:
         {
             int start = text?.IndexOf('{') ?? -1, end = text?.LastIndexOf('}') ?? -1;
             if (start < 0 || end <= start)
-                throw new InvalidOperationException("La risposta dell'AI non contiene i valori dei cursori: riprova.");
+                throw new InvalidOperationException(T("La risposta dell'AI non contiene i valori dei cursori: riprova."));
 
             JsonDocument doc;
             try { doc = JsonDocument.Parse(text.Substring(start, end - start + 1)); }
-            catch (JsonException) { throw new InvalidOperationException("La risposta dell'AI non è in un formato valido: riprova."); }
+            catch (JsonException) { throw new InvalidOperationException(T("La risposta dell'AI non è in un formato valido: riprova.")); }
 
             using (doc)
             {
@@ -173,7 +177,7 @@ Guidelines:
                     found++;
                 }
                 if (found == 0)
-                    throw new InvalidOperationException("La risposta dell'AI non contiene i valori dei cursori: riprova.");
+                    throw new InvalidOperationException(T("La risposta dell'AI non contiene i valori dei cursori: riprova."));
 
                 string explanation = fields.TryGetValue("explanation", out var e) && e.ValueKind == JsonValueKind.String ? e.GetString() : "";
                 return new AiSuggestion { Settings = s, Explanation = explanation };

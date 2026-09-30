@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json.Serialization;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Core
 {
@@ -22,9 +23,11 @@ namespace PhotoStudio.Core
     /// </summary>
     public sealed class LocalMask
     {
-        public string Name = "Maschera";
+        public string Name = T("Maschera");
         public MaskKind Kind;
         public bool Enabled = true;
+        /// <summary>Created by Luce intelligente, which replaces its own masks when it runs again.</summary>
+        public bool Auto;
         /// <summary>Radial: adjust outside the ellipse instead of inside. Luminance: every tone except the range.</summary>
         public bool Invert;
 
@@ -86,7 +89,7 @@ namespace PhotoStudio.Core
         // ---- Local adjustments
         public List<LocalMask> Masks = new List<LocalMask>();
 
-        public static readonly string[] MixNames = { "Rossi", "Arancioni", "Gialli", "Verdi", "Acqua", "Blu", "Viola", "Magenta" };
+        public static readonly string[] MixNames = { TC("mix", "Rossi"), TC("mix", "Arancioni"), TC("mix", "Gialli"), TC("mix", "Verdi"), TC("mix", "Acqua"), TC("mix", "Blu"), TC("mix", "Viola"), TC("mix", "Magenta") };
 
         public RawSettings Clone()
         {
@@ -164,30 +167,30 @@ namespace PhotoStudio.Core
             {
                 if (Math.Abs(v) >= 0.5) parts.Add(name + " " + v.ToString(fmt, CultureInfo.CurrentCulture));
             }
-            Add("temperatura", Temperature);
-            Add("tinta", Tint);
-            if (Math.Abs(Exposure) >= 0.05) parts.Add("esposizione " + Exposure.ToString("+0.00;-0.00", CultureInfo.CurrentCulture) + " EV");
-            Add("contrasto", Contrast);
-            Add("luci", Highlights);
-            Add("ombre", Shadows);
-            Add("bianchi", Whites);
-            Add("neri", Blacks);
-            Add("texture", Texture);
-            Add("chiarezza", Clarity);
-            Add("foschia", Dehaze);
-            Add("vividezza", Vibrance);
-            Add("saturazione", Saturation);
-            if (HasCurve) parts.Add("curva di tono");
-            if (HasMixer) parts.Add("mix colori");
-            if (HasGrading) parts.Add("color grading");
-            if (NoiseLuma >= 0.5 || NoiseColor >= 0.5) parts.Add("riduzione rumore");
-            Add("vignettatura", VignetteAmount);
-            if (GrainAmount >= 0.5) parts.Add("grana");
-            if (Math.Abs(Angle) >= 0.01) parts.Add("raddrizzata " + Angle.ToString("+0.0;-0.0", CultureInfo.CurrentCulture) + "°");
-            if (HasCrop) parts.Add("ritagliata");
+            Add(T("temperatura"), Temperature);
+            Add(T("tinta"), Tint);
+            if (Math.Abs(Exposure) >= 0.05) parts.Add(T("esposizione {0} EV", Exposure.ToString("+0.00;-0.00", CultureInfo.CurrentCulture)));
+            Add(T("contrasto"), Contrast);
+            Add(T("luci"), Highlights);
+            Add(T("ombre"), Shadows);
+            Add(T("bianchi"), Whites);
+            Add(T("neri"), Blacks);
+            Add(T("texture"), Texture);
+            Add(T("chiarezza"), Clarity);
+            Add(T("foschia"), Dehaze);
+            Add(T("vividezza"), Vibrance);
+            Add(T("saturazione"), Saturation);
+            if (HasCurve) parts.Add(T("curva di tono"));
+            if (HasMixer) parts.Add(T("mix colori"));
+            if (HasGrading) parts.Add(T("color grading"));
+            if (NoiseLuma >= 0.5 || NoiseColor >= 0.5) parts.Add(T("riduzione rumore"));
+            Add(T("vignettatura"), VignetteAmount);
+            if (GrainAmount >= 0.5) parts.Add(T("grana"));
+            if (Math.Abs(Angle) >= 0.01) parts.Add(T("raddrizzata {0}°", Angle.ToString("+0.0;-0.0", CultureInfo.CurrentCulture)));
+            if (HasCrop) parts.Add(T("ritagliata"));
             int masks = Masks?.Count(m => m.Enabled) ?? 0;
-            if (masks > 0) parts.Add(masks == 1 ? "1 maschera" : masks + " maschere");
-            return parts.Count == 0 ? "l'immagine era già bilanciata" : string.Join(", ", parts);
+            if (masks > 0) parts.Add(masks == 1 ? T("1 maschera") : T("{0} maschere", masks));
+            return parts.Count == 0 ? T("l'immagine era già bilanciata") : string.Join(", ", parts);
         }
     }
 

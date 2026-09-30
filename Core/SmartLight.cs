@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Core
 {
@@ -10,7 +11,17 @@ namespace PhotoStudio.Core
     /// </summary>
     public static class SmartLight
     {
-        public const string Prefix = "Luce auto";
+        /// <summary>True for the masks added by Luce intelligente (also those saved before the Auto flag existed).</summary>
+        public static bool IsAuto(LocalMask m) => m.Auto || (m.Name != null && m.Name.StartsWith("Luce auto:", StringComparison.Ordinal));
+
+        /// <summary>The zone of an automatic mask ("ombre", "cielo"...), as shown in its name.</summary>
+        public static string ZoneOf(LocalMask m)
+        {
+            int i = m.Name?.IndexOf(": ", StringComparison.Ordinal) ?? -1;
+            return i >= 0 ? m.Name.Substring(i + 2) : m.Name ?? "";
+        }
+
+        static string MaskName(string zone) => T("Luce auto: {0}", zone);
 
         /// <param name="intensity">0..150 %: how strongly to apply the correction (100 = normal).</param>
         public static RawSettings Apply(RawImage img, RawSettings current, double intensity = 100)
@@ -18,7 +29,7 @@ namespace PhotoStudio.Core
             double k = Math.Clamp(intensity, 0, 150) / 100;
             var small = img.Downscale(480);
             var start = current.Clone();
-            start.Masks.RemoveAll(m => m.Name != null && m.Name.StartsWith(Prefix, StringComparison.Ordinal));   // redo, don't stack
+            start.Masks.RemoveAll(IsAuto);   // redo, don't stack
             var auto = RawDevelop.AutoTone(small, start);
 
             var r = start.Clone();
@@ -74,7 +85,7 @@ namespace PhotoStudio.Core
                 double ev = Math.Clamp(0.25 + (0.12 - meanDark) * 3, 0.15, 0.7) * k;
                 r.Masks.Add(new LocalMask
                 {
-                    Name = Prefix + ": ombre", Kind = MaskKind.Luminance, Low = 0, High = 0.28, Feather = 0.15,
+                    Name = MaskName(T("ombre")), Auto = true, Kind = MaskKind.Luminance, Low = 0, High = 0.28, Feather = 0.15,
                     Exposure = Math.Round(ev, 2), Clarity = Math.Round(6 * k),
                 });
             }
@@ -85,7 +96,7 @@ namespace PhotoStudio.Core
                 double ev = -Math.Clamp(0.2 + fracBright * 1.5, 0.2, 0.6) * k;
                 r.Masks.Add(new LocalMask
                 {
-                    Name = Prefix + ": luci", Kind = MaskKind.Luminance, Low = 0.75, High = 1, Feather = 0.12,
+                    Name = MaskName(T("luci")), Auto = true, Kind = MaskKind.Luminance, Low = 0.75, High = 1, Feather = 0.12,
                     Exposure = Math.Round(ev, 2), Saturation = Math.Round(8 * k), Contrast = Math.Round(6 * k),
                 });
             }
@@ -108,7 +119,7 @@ namespace PhotoStudio.Core
                 double horizon = Math.Clamp(best / (double)h + 0.05, 0.2, 0.8);
                 r.Masks.Add(new LocalMask
                 {
-                    Name = Prefix + ": cielo", Kind = MaskKind.Linear, X1 = cx, Y1 = r.CropT, X2 = cx, Y2 = horizon,
+                    Name = MaskName(T("cielo")), Auto = true, Kind = MaskKind.Linear, X1 = cx, Y1 = r.CropT, X2 = cx, Y2 = horizon,
                     Exposure = Math.Round(-0.3 * k, 2), Saturation = Math.Round(12 * k), Contrast = Math.Round(8 * k),
                 });
             }
@@ -118,7 +129,7 @@ namespace PhotoStudio.Core
             {
                 r.Masks.Add(new LocalMask
                 {
-                    Name = Prefix + ": soggetto", Kind = MaskKind.Radial, X1 = cx, Y1 = cy, RX = 0.3, RY = 0.35, Feather = 0.7,
+                    Name = MaskName(T("soggetto")), Auto = true, Kind = MaskKind.Radial, X1 = cx, Y1 = cy, RX = 0.3, RY = 0.35, Feather = 0.7,
                     Exposure = Math.Round(0.25 * k, 2),
                 });
             }

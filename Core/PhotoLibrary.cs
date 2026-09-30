@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Sdcb.LibRaw;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Core
 {
@@ -84,7 +85,7 @@ namespace PhotoStudio.Core
         public Session Session { get; set; }
         public string OutputPath { get; set; }
         public PhotoState State { get => _state; set { _state = value; Raise(); Raise(nameof(StateText)); } }
-        public string StateText => _state switch { PhotoState.Open => "● aperta", PhotoState.Saved => "✓ salvata", _ => "" };
+        public string StateText => _state switch { PhotoState.Open => T("● aperta"), PhotoState.Saved => T("✓ salvata"), _ => "" };
 
         public event PropertyChangedEventHandler PropertyChanged;
         void Raise([CallerMemberName] string name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
@@ -102,7 +103,7 @@ namespace PhotoStudio.Core
             Frozen(Color.FromRgb(0x8E, 0x4E, 0xC6)),
         };
 
-        public static readonly string[] Names = { "Nessuno", "Rosso", "Giallo", "Verde", "Blu", "Viola" };
+        public static readonly string[] Names = { T("Nessuno"), T("Rosso"), T("Giallo"), T("Verde"), T("Blu"), T("Viola") };
 
         public static Brush Brush(PhotoLabel l) => Brushes[(int)l];
 
@@ -531,9 +532,9 @@ namespace PhotoStudio.Core
             };
             int rc = SHFileOperation(ref op);
             if (op.fAnyOperationsAborted) return false;
-            if (rc != 0) throw new IOException($"Windows non è riuscito a spostare il file nel Cestino (codice 0x{rc:X}). Il file potrebbe essere aperto in un altro programma.");
+            if (rc != 0) throw new IOException(T("Windows non è riuscito a spostare il file nel Cestino (codice 0x{0:X}). Il file potrebbe essere aperto in un altro programma.", rc));
             var left = list.Where(File.Exists).ToList();
-            if (left.Count > 0) throw new IOException("Il file è ancora presente: " + Path.GetFileName(left[0]));
+            if (left.Count > 0) throw new IOException(T("Il file è ancora presente: {0}", Path.GetFileName(left[0])));
             return true;
         }
 

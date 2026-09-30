@@ -11,6 +11,7 @@ using Anthropic;
 using Anthropic.Exceptions;
 using Anthropic.Models.Beta;
 using Anthropic.Models.Beta.Messages;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Core
 {
@@ -68,29 +69,29 @@ namespace PhotoStudio.Core
             }
             catch (AnthropicUnauthorizedException)
             {
-                throw new InvalidOperationException("La chiave API di Claude non è valida. Controllala in Modifica ▸ Impostazioni AI.");
+                throw new InvalidOperationException(T("La chiave API di Claude non è valida. Controllala in Modifica ▸ Impostazioni AI."));
             }
             catch (AnthropicRateLimitException)
             {
-                throw new InvalidOperationException("Troppe richieste a Claude in poco tempo: riprova tra qualche secondo.");
+                throw new InvalidOperationException(T("Troppe richieste a Claude in poco tempo: riprova tra qualche secondo."));
             }
             catch (Anthropic5xxException)
             {
-                throw new InvalidOperationException("Il servizio di Claude è temporaneamente non disponibile: riprova tra poco.");
+                throw new InvalidOperationException(T("Il servizio di Claude è temporaneamente non disponibile: riprova tra poco."));
             }
             catch (AnthropicIOException ex)
             {
-                throw new InvalidOperationException("Impossibile contattare Claude: controlla la connessione a Internet.\n" + ex.Message);
+                throw new InvalidOperationException(T("Impossibile contattare Claude: controlla la connessione a Internet.\n{0}", ex.Message));
             }
             catch (AnthropicApiException ex)
             {
-                throw new InvalidOperationException("Claude ha restituito un errore: " + ex.Message);
+                throw new InvalidOperationException(T("Claude ha restituito un errore: {0}", ex.Message));
             }
 
             if (response.StopReason == "refusal")
-                throw new InvalidOperationException("Claude ha rifiutato questa richiesta.");
+                throw new InvalidOperationException(T("Claude ha rifiutato questa richiesta."));
             if (response.StopReason == "max_tokens")
-                throw new InvalidOperationException("La risposta di Claude è stata troncata: riprova.");
+                throw new InvalidOperationException(T("La risposta di Claude è stata troncata: riprova."));
 
             string json = string.Concat(response.Content.Select(b => b.Value).OfType<BetaTextBlock>().Select(t => t.Text));
             return AiEditor.Parse(json, r.Current);
@@ -167,8 +168,7 @@ namespace PhotoStudio.Core
                         return new AiSuggestion
                         {
                             Settings = s.Settings, Explanation = s.Explanation,
-                            Note = $"{string.Join("; ", failures)}: ha risposto {m}. " +
-                                   "Se succede spesso scegli un altro modello in Modifica ▸ Impostazioni AI.",
+                            Note = T("{0}: ha risposto {1}. Se succede spesso scegli un altro modello in Modifica ▸ Impostazioni AI.", string.Join("; ", failures), m),
                         };
                     }
                     catch (GeminiException ex) when (ex.TryAnotherModel)
@@ -179,15 +179,14 @@ namespace PhotoStudio.Core
                             await Task.Delay(1500, cancellationToken);   // brief overloads often pass in a moment
                             continue;
                         }
-                        failures.Add($"{m} {ex.Reason ?? "non disponibile"}");
+                        failures.Add($"{m} {ex.Reason ?? T("non disponibile")}");
                         lock (Unavailable) Unavailable[m] = DateTime.Now.AddMinutes(10);
                         break;
                     }
                 }
             }
             throw new InvalidOperationException(
-                "Nessun modello Gemini ha risposto: Google li segnala sovraccarichi o hai finito le richieste gratuite di oggi. " +
-                "Riprova tra qualche minuto, oppure usa Ollama o Claude.\n\nUltimo errore: " + last?.Message);
+                T("Nessun modello Gemini ha risposto: Google li segnala sovraccarichi o hai finito le richieste gratuite di oggi. Riprova tra qualche minuto, oppure usa Ollama o Claude.\n\nUltimo errore: {0}", last?.Message));
         }
 
         static async Task<AiSuggestion> SuggestWithModelAsync(AiRequest r, string apiKey, string model, CancellationToken cancellationToken)
@@ -220,9 +219,9 @@ namespace PhotoStudio.Core
             using var doc = JsonDocument.Parse(text);
             var root = doc.RootElement;
             if (root.TryGetProperty("promptFeedback", out var pf) && pf.TryGetProperty("blockReason", out var br))
-                throw new InvalidOperationException($"Gemini ha bloccato la richiesta ({br.GetString()}).");
+                throw new InvalidOperationException(T("Gemini ha bloccato la richiesta ({0}).", br.GetString()));
             if (!root.TryGetProperty("candidates", out var candidates) || candidates.GetArrayLength() == 0)
-                throw new InvalidOperationException("Gemini non ha restituito alcuna risposta: riprova.");
+                throw new InvalidOperationException(T("Gemini non ha restituito alcuna risposta: riprova."));
 
             var candidate = candidates[0];
             string finish = candidate.TryGetProperty("finishReason", out var fr) ? fr.GetString() : "STOP";
@@ -235,11 +234,11 @@ namespace PhotoStudio.Core
                 }
 
             if (finish == "MAX_TOKENS")
-                throw new InvalidOperationException("La risposta di Gemini è stata troncata: riprova.");
+                throw new InvalidOperationException(T("La risposta di Gemini è stata troncata: riprova."));
             if (finish is "SAFETY" or "PROHIBITED_CONTENT" or "IMAGE_SAFETY" or "BLOCKLIST" or "SPII" or "RECITATION")
-                throw new InvalidOperationException($"Gemini ha rifiutato questa richiesta ({finish}).");
+                throw new InvalidOperationException(T("Gemini ha rifiutato questa richiesta ({0}).", finish));
             if (answer.Length == 0)
-                throw new InvalidOperationException($"Gemini non ha restituito una risposta ({finish}): riprova.");
+                throw new InvalidOperationException(T("Gemini non ha restituito una risposta ({0}): riprova.", finish));
             return AiEditor.Parse(answer.ToString(), r.Current);
         }
 
@@ -290,11 +289,11 @@ namespace PhotoStudio.Core
             }
             catch (TaskCanceledException)
             {
-                throw new InvalidOperationException("Gemini non ha risposto in tempo: riprova.");
+                throw new InvalidOperationException(T("Gemini non ha risposto in tempo: riprova."));
             }
             catch (HttpRequestException ex)
             {
-                throw new InvalidOperationException("Impossibile contattare Gemini: controlla la connessione a Internet.\n" + ex.Message);
+                throw new InvalidOperationException(T("Impossibile contattare Gemini: controlla la connessione a Internet.\n{0}", ex.Message));
             }
 
             using (response)
@@ -316,16 +315,16 @@ namespace PhotoStudio.Core
                 int code = (int)response.StatusCode;
                 string detail = string.IsNullOrWhiteSpace(message) ? "" : " — " + message;
                 if (reason == "API_KEY_INVALID" || code == 401 || (code == 400 && message.Contains("API key", StringComparison.OrdinalIgnoreCase)))
-                    throw new GeminiException("La chiave API di Gemini non è valida. Controllala in Modifica ▸ Impostazioni AI.", false, false);
+                    throw new GeminiException(T("La chiave API di Gemini non è valida. Controllala in Modifica ▸ Impostazioni AI."), false, false);
                 if (code == 403)
-                    throw new GeminiException("La chiave di Gemini non ha accesso a questo servizio: " + message, false, false);
+                    throw new GeminiException(T("La chiave di Gemini non ha accesso a questo servizio: {0}", message), false, false);
                 if (code == 404)
-                    throw new GeminiException($"Il modello Gemini \"{model}\" non esiste o non è disponibile (errore 404): scegline un altro in Modifica ▸ Impostazioni AI (pulsante Aggiorna elenco).", model != null, false, "non esiste più");
+                    throw new GeminiException(T("Il modello Gemini \"{0}\" non esiste o non è disponibile (errore 404): scegline un altro in Modifica ▸ Impostazioni AI (pulsante Aggiorna elenco).", model), model != null, false, T("non esiste più"));
                 if (code == 429 || status == "RESOURCE_EXHAUSTED")
-                    throw new GeminiException($"Hai raggiunto il limite di richieste di Gemini per \"{model}\" (errore 429: con il piano gratuito c'è un limite al minuto e al giorno){detail}", model != null, false, "ha finito le richieste gratuite");
+                    throw new GeminiException(T("Hai raggiunto il limite di richieste di Gemini per \"{0}\" (errore 429: con il piano gratuito c'è un limite al minuto e al giorno){1}", model, detail), model != null, false, T("ha finito le richieste gratuite"));
                 if (code >= 500)
-                    throw new GeminiException($"Il modello Gemini \"{model}\" è sovraccarico o non disponibile in questo momento (errore {code}){detail}", model != null, true, "è sovraccarico");
-                throw new GeminiException("Gemini ha restituito un errore: " + message, false, false);
+                    throw new GeminiException(T("Il modello Gemini \"{0}\" è sovraccarico o non disponibile in questo momento (errore {1}){2}", model, code, detail), model != null, true, T("è sovraccarico"));
+                throw new GeminiException(T("Gemini ha restituito un errore: {0}", message), false, false);
             }
         }
     }
@@ -359,7 +358,7 @@ namespace PhotoStudio.Core
         public static async Task<AiSuggestion> SuggestAsync(AiRequest r, string baseUrl, string model, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(model))
-                throw new InvalidOperationException("Scegli il modello di Ollama in Modifica ▸ Impostazioni AI.");
+                throw new InvalidOperationException(T("Scegli il modello di Ollama in Modifica ▸ Impostazioni AI."));
             var body = new Dictionary<string, object>
             {
                 ["model"] = model.Trim(),
@@ -377,7 +376,7 @@ namespace PhotoStudio.Core
             using var doc = JsonDocument.Parse(text);
             var root = doc.RootElement;
             if (root.TryGetProperty("done_reason", out var dr) && dr.GetString() == "length")
-                throw new InvalidOperationException("La risposta di Ollama è stata troncata: riprova.");
+                throw new InvalidOperationException(T("La risposta di Ollama è stata troncata: riprova."));
             string answer = root.TryGetProperty("message", out var msg) && msg.TryGetProperty("content", out var c) ? c.GetString() : null;
             return AiEditor.Parse(answer, r.Current);
         }
@@ -424,15 +423,15 @@ namespace PhotoStudio.Core
             }
             catch (TaskCanceledException)
             {
-                throw new InvalidOperationException("Ollama non ha risposto in tempo: il modello potrebbe essere troppo pesante per questo PC.");
+                throw new InvalidOperationException(T("Ollama non ha risposto in tempo: il modello potrebbe essere troppo pesante per questo PC."));
             }
             catch (HttpRequestException)
             {
-                throw new InvalidOperationException($"Ollama non risponde su {baseUrl}. Verifica che Ollama sia installato e avviato ({DownloadUrl}).");
+                throw new InvalidOperationException(T("Ollama non risponde su {0}. Verifica che Ollama sia installato e avviato ({1}).", baseUrl, DownloadUrl));
             }
             catch (UriFormatException)
             {
-                throw new InvalidOperationException($"L'indirizzo di Ollama \"{baseUrl}\" non è valido.");
+                throw new InvalidOperationException(T("L'indirizzo di Ollama \"{0}\" non è valido.", baseUrl));
             }
 
             using (response)
@@ -446,10 +445,10 @@ namespace PhotoStudio.Core
                 }
                 catch { }
                 if (response.StatusCode == HttpStatusCode.NotFound && model != null)
-                    throw new InvalidOperationException($"Il modello \"{model}\" non è installato in Ollama. Scaricalo con: ollama pull {model}");
+                    throw new InvalidOperationException(T("Il modello \"{0}\" non è installato in Ollama. Scaricalo con: ollama pull {1}", model, model));
                 if (error != null && error.Contains("image", StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException($"Il modello \"{model}\" non può vedere le immagini: scegli un modello con visione (es. gemma3, qwen2.5vl, llama3.2-vision).");
-                throw new InvalidOperationException("Ollama ha restituito un errore: " + error);
+                    throw new InvalidOperationException(T("Il modello \"{0}\" non può vedere le immagini: scegli un modello con visione (es. gemma3, qwen2.5vl, llama3.2-vision).", model));
+                throw new InvalidOperationException(T("Ollama ha restituito un errore: {0}", error));
             }
         }
     }

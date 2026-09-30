@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using PhotoStudio.Core;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Dialogs
 {
@@ -27,17 +28,16 @@ namespace PhotoStudio.Dialogs
         List<OllamaModel> _ollamaModels = new List<OllamaModel>();
         bool _ollamaListed;
 
-        public AiSettingsDialog(Window owner, AiProvider? select = null) : base(owner, "Impostazioni AI")
+        public AiSettingsDialog(Window owner, AiProvider? select = null) : base(owner, T("Impostazioni AI"))
         {
             _settings = AiSettings.Load();
             Body.Width = 520;
 
-            Body.Children.Add(Wrap("Scegli il servizio AI che imposta i cursori di Camera Raw. In ogni caso l'AI risponde solo con dei numeri: " +
-                                   "i pixel della foto li elabora sempre PhotoStudio.", dim: false, bottom: 12));
+            Body.Children.Add(Wrap(T("Scegli il servizio AI che imposta i cursori di Camera Raw. In ogni caso l'AI risponde solo con dei numeri: i pixel della foto li elabora sempre PhotoStudio."), dim: false, bottom: 12));
 
-            AddChoice(AiProvider.Gemini, "Gemini (Google)", "Gratuito entro i limiti del piano free: serve una chiave API gratuita di Google AI Studio.");
-            AddChoice(AiProvider.Ollama, "Ollama (sul tuo PC)", "Gratuito e senza chiave: il modello gira sul tuo computer e la foto non esce dal PC.");
-            AddChoice(AiProvider.Claude, "Claude (Anthropic)", "A pagamento: serve una chiave API della Claude Console.");
+            AddChoice(AiProvider.Gemini, "Gemini (Google)", T("Gratuito entro i limiti del piano free: serve una chiave API gratuita di Google AI Studio."));
+            AddChoice(AiProvider.Ollama, T("Ollama (sul tuo PC)"), T("Gratuito e senza chiave: il modello gira sul tuo computer e la foto non esce dal PC."));
+            AddChoice(AiProvider.Claude, "Claude (Anthropic)", T("A pagamento: serve una chiave API della Claude Console."));
 
             var host = new Border
             {
@@ -51,33 +51,31 @@ namespace PhotoStudio.Dialogs
             // ---- Gemini
             var gemini = new StackPanel();
             _geminiKey = KeyBox();
-            gemini.Children.Add(Row(Label("Chiave API:", 90), _geminiKey));
+            gemini.Children.Add(Row(Label(T("Chiave API:"), 90), _geminiKey));
             _geminiState = Wrap("", left: 98, top: -6, bottom: 4);
             gemini.Children.Add(_geminiState);
-            gemini.Children.Add(LinkLine("Crea una chiave gratuita in ", "Google AI Studio", GeminiProvider.KeyUrl, " (pulsante \"Create API key\")."));
+            gemini.Children.Add(LinkLine(T("Crea una chiave gratuita in "), "Google AI Studio", GeminiProvider.KeyUrl, T(" (pulsante \"Create API key\").")));
             _geminiModel = new ComboBox { Width = 200 };
-            var geminiRefresh = new Button { Content = "Aggiorna elenco", Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(10, 2, 10, 2) };
+            var geminiRefresh = new Button { Content = T("Aggiorna elenco"), Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(10, 2, 10, 2) };
             geminiRefresh.Click += async (s, e) =>
             {
                 string key = _geminiKey.Password.Trim();
                 if (key.Length == 0) key = _settings.ResolveKey(AiProvider.Gemini);
-                if (string.IsNullOrWhiteSpace(key)) { SetState(_geminiState, "Inserisci prima la chiave API.", true); return; }
+                if (string.IsNullOrWhiteSpace(key)) { SetState(_geminiState, T("Inserisci prima la chiave API."), true); return; }
                 geminiRefresh.IsEnabled = false;
-                SetState(_geminiState, "Lettura dei modelli disponibili...", false);
+                SetState(_geminiState, T("Lettura dei modelli disponibili..."), false);
                 try
                 {
                     var names = await GeminiProvider.ListModelsAsync(key, CancellationToken.None);
                     string current = SelectedGeminiModel();
                     FillStrings(_geminiModel, names, names.Contains(current) ? current : names.FirstOrDefault(n => n == GeminiProvider.DefaultModel) ?? names.FirstOrDefault());
-                    SetState(_geminiState, $"La chiave funziona: {names.Count} modelli disponibili.", false);
+                    SetState(_geminiState, T("La chiave funziona: {0} modelli disponibili.", names.Count), false);
                 }
                 catch (Exception ex) { SetState(_geminiState, ex.Message, true); }
                 finally { geminiRefresh.IsEnabled = true; }
             };
-            gemini.Children.Add(Row(Label("Modello:", 90), _geminiModel, geminiRefresh));
-            gemini.Children.Add(Wrap("Privacy: a Google viene inviata solo un'anteprima ridotta della foto (circa 1000 pixel) con i valori dei cursori. " +
-                                     "Con il piano gratuito Google può usare i dati inviati per migliorare i suoi servizi: evitalo per le foto private. " +
-                                     "Il piano gratuito ha un limite di richieste al minuto e al giorno.", bottom: 8));
+            gemini.Children.Add(Row(Label(T("Modello:"), 90), _geminiModel, geminiRefresh));
+            gemini.Children.Add(Wrap(T("Privacy: a Google viene inviata solo un'anteprima ridotta della foto (circa 1000 pixel) con i valori dei cursori. Con il piano gratuito Google può usare i dati inviati per migliorare i suoi servizi: evitalo per le foto private. Il piano gratuito ha un limite di richieste al minuto e al giorno."), bottom: 8));
             _geminiRemove = RemoveButton(AiProvider.Gemini, () => _geminiState);
             gemini.Children.Add(_geminiRemove);
             AddPanel(stack, AiProvider.Gemini, gemini);
@@ -85,38 +83,36 @@ namespace PhotoStudio.Dialogs
             // ---- Ollama
             var ollama = new StackPanel();
             _ollamaUrl = new TextBox { Width = FieldWidth, Height = 24, Text = _settings.OllamaUrl };
-            ollama.Children.Add(Row(Label("Indirizzo:", 90), _ollamaUrl));
+            ollama.Children.Add(Row(Label(T("Indirizzo:"), 90), _ollamaUrl));
             _ollamaModel = new ComboBox { Width = 200 };
-            var ollamaRefresh = new Button { Content = "Aggiorna elenco", Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(10, 2, 10, 2) };
+            var ollamaRefresh = new Button { Content = T("Aggiorna elenco"), Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(10, 2, 10, 2) };
             ollamaRefresh.Click += async (s, e) => { ollamaRefresh.IsEnabled = false; await RefreshOllama(); ollamaRefresh.IsEnabled = true; };
-            ollama.Children.Add(Row(Label("Modello:", 90), _ollamaModel, ollamaRefresh));
+            ollama.Children.Add(Row(Label(T("Modello:"), 90), _ollamaModel, ollamaRefresh));
             _ollamaState = Wrap("", left: 98, top: -6, bottom: 6);
             ollama.Children.Add(_ollamaState);
-            ollama.Children.Add(LinkLine("Come iniziare: installa Ollama da ", "ollama.com", OllamaProvider.DownloadUrl,
-                ", poi nel Prompt dei comandi scarica un modello che vede le immagini, ad esempio:"));
+            ollama.Children.Add(LinkLine(T("Come iniziare: installa Ollama da "), "ollama.com", OllamaProvider.DownloadUrl,
+                T(", poi nel Prompt dei comandi scarica un modello che vede le immagini, ad esempio:")));
             ollama.Children.Add(new TextBox
             {
                 Text = "ollama pull gemma3", IsReadOnly = true, FontFamily = new FontFamily("Consolas"), Width = 200,
                 HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 2, 0, 6), Height = 24,
             });
-            ollama.Children.Add(Wrap("I modelli più grandi (es. gemma3:12b, qwen2.5vl:7b) danno risultati migliori ma richiedono più memoria e una buona scheda video. " +
-                                     "Tutto resta sul tuo PC: nessun dato viene inviato su Internet.", bottom: 8));
+            ollama.Children.Add(Wrap(T("I modelli più grandi (es. gemma3:12b, qwen2.5vl:7b) danno risultati migliori ma richiedono più memoria e una buona scheda video. Tutto resta sul tuo PC: nessun dato viene inviato su Internet."), bottom: 8));
             AddPanel(stack, AiProvider.Ollama, ollama);
 
             // ---- Claude
             var claude = new StackPanel();
             _claudeKey = KeyBox();
-            claude.Children.Add(Row(Label("Chiave API:", 90), _claudeKey));
+            claude.Children.Add(Row(Label(T("Chiave API:"), 90), _claudeKey));
             _claudeState = Wrap("", left: 98, top: -6, bottom: 4);
             claude.Children.Add(_claudeState);
-            claude.Children.Add(LinkLine("Puoi crearla nella ", "Claude Console", ClaudeProvider.KeyUrl, " (sezione API Keys)."));
-            claude.Children.Add(Wrap("Privacy: ad Anthropic viene inviata solo un'anteprima ridotta della foto (circa 1000 pixel) con i valori dei cursori. " +
-                                     "Ogni richiesta viene addebitata sul tuo account Anthropic.", top: 4, bottom: 8));
+            claude.Children.Add(LinkLine(T("Puoi crearla nella "), "Claude Console", ClaudeProvider.KeyUrl, T(" (sezione API Keys).")));
+            claude.Children.Add(Wrap(T("Privacy: ad Anthropic viene inviata solo un'anteprima ridotta della foto (circa 1000 pixel) con i valori dei cursori. Ogni richiesta viene addebitata sul tuo account Anthropic."), top: 4, bottom: 8));
             _claudeRemove = RemoveButton(AiProvider.Claude, () => _claudeState);
             claude.Children.Add(_claudeRemove);
             AddPanel(stack, AiProvider.Claude, claude);
 
-            Body.Children.Add(Wrap("Le chiavi vengono salvate cifrate con Windows e sono leggibili solo dal tuo utente.", top: 4, bottom: 0));
+            Body.Children.Add(Wrap(T("Le chiavi vengono salvate cifrate con Windows e sono leggibili solo dal tuo utente."), top: 4, bottom: 0));
 
             FillStrings(_geminiModel, GeminiProvider.SuggestedModels.ToList(), string.IsNullOrWhiteSpace(_settings.GeminiModel) ? GeminiProvider.DefaultModel : _settings.GeminiModel);
             if (!string.IsNullOrWhiteSpace(_settings.OllamaModel))
@@ -162,7 +158,7 @@ namespace PhotoStudio.Dialogs
 
         async System.Threading.Tasks.Task RefreshOllama()
         {
-            SetState(_ollamaState, "Ricerca dei modelli installati...", false);
+            SetState(_ollamaState, T("Ricerca dei modelli installati..."), false);
             try
             {
                 string current = (_ollamaModel.SelectedItem as ComboBoxItem)?.Tag as string ?? _settings.OllamaModel;
@@ -170,13 +166,13 @@ namespace PhotoStudio.Dialogs
                 if (_ollamaModels.Count == 0)
                 {
                     FillOllama(null);
-                    SetState(_ollamaState, "Ollama è attivo ma non ha modelli installati: scaricane uno (vedi sotto) e premi Aggiorna elenco.", true);
+                    SetState(_ollamaState, T("Ollama è attivo ma non ha modelli installati: scaricane uno (vedi sotto) e premi Aggiorna elenco."), true);
                     return;
                 }
                 var pick = _ollamaModels.FirstOrDefault(m => m.Name == current) ?? _ollamaModels.FirstOrDefault(m => m.Vision == true) ?? _ollamaModels[0];
                 FillOllama(pick.Name);
                 int vision = _ollamaModels.Count(m => m.Vision == true);
-                SetState(_ollamaState, $"Ollama è attivo: {_ollamaModels.Count} modelli installati, {vision} in grado di vedere le immagini.", vision == 0);
+                SetState(_ollamaState, T("Ollama è attivo: {0} modelli installati, {1} in grado di vedere le immagini.", _ollamaModels.Count, vision), vision == 0);
             }
             catch (Exception ex)
             {
@@ -189,7 +185,7 @@ namespace PhotoStudio.Dialogs
             _ollamaModel.Items.Clear();
             foreach (var m in _ollamaModels)
             {
-                string note = m.Vision == true ? "  (visione)" : m.Vision == false ? "  (senza visione)" : "";
+                string note = m.Vision == true ? T("  (visione)") : m.Vision == false ? T("  (senza visione)") : "";
                 string size = string.IsNullOrEmpty(m.Size) ? "" : "  " + m.Size;
                 var item = new ComboBoxItem { Content = m.Name + size + note, Tag = m.Name };
                 _ollamaModel.Items.Add(item);
@@ -212,9 +208,9 @@ namespace PhotoStudio.Dialogs
             foreach (var (p, state, remove) in new[] { (AiProvider.Gemini, _geminiState, _geminiRemove), (AiProvider.Claude, _claudeState, _claudeRemove) })
             {
                 string env = AiSettings.EnvironmentKey(p);
-                string text = env != null ? $"È impostata la variabile d'ambiente {env}: viene usata quella."
-                    : KeyStore.HasSavedKey(p) ? "Una chiave è già salvata. Inseriscine una nuova solo per sostituirla."
-                    : "Nessuna chiave salvata.";
+                string text = env != null ? T("È impostata la variabile d'ambiente {0}: viene usata quella.", env)
+                    : KeyStore.HasSavedKey(p) ? T("Una chiave è già salvata. Inseriscine una nuova solo per sostituirla.")
+                    : T("Nessuna chiave salvata.");
                 SetState(state, text, false);
                 remove.IsEnabled = KeyStore.HasSavedKey(p);
             }
@@ -222,12 +218,12 @@ namespace PhotoStudio.Dialogs
 
         Button RemoveButton(AiProvider p, Func<TextBlock> state)
         {
-            var b = new Button { Content = "Rimuovi chiave salvata", HorizontalAlignment = HorizontalAlignment.Left, Padding = new Thickness(10, 3, 10, 3), Margin = new Thickness(0, 0, 0, 10) };
+            var b = new Button { Content = T("Rimuovi chiave salvata"), HorizontalAlignment = HorizontalAlignment.Left, Padding = new Thickness(10, 3, 10, 3), Margin = new Thickness(0, 0, 0, 10) };
             b.Click += (s, e) =>
             {
                 KeyStore.Delete(p);
                 UpdateKeyStates();
-                SetState(state(), "Chiave rimossa.", false);
+                SetState(state(), T("Chiave rimossa."), false);
             };
             return b;
         }
@@ -238,12 +234,12 @@ namespace PhotoStudio.Dialogs
             string gk = _geminiKey.Password.Trim(), ck = _claudeKey.Password.Trim();
             if (gk.Length > 0 && (gk.Length < 20 || gk.Any(char.IsWhiteSpace)))
             {
-                Error("La chiave di Gemini non sembra valida: copiala di nuovo da Google AI Studio.");
+                Error(T("La chiave di Gemini non sembra valida: copiala di nuovo da Google AI Studio."));
                 return;
             }
             if (ck.Length > 0 && !ck.StartsWith("sk-ant-", StringComparison.Ordinal))
             {
-                Error("La chiave non sembra valida: le chiavi API di Anthropic iniziano con \"sk-ant-\".");
+                Error(T("La chiave non sembra valida: le chiavi API di Anthropic iniziano con \"sk-ant-\"."));
                 return;
             }
             if (gk.Length > 0) KeyStore.Save(AiProvider.Gemini, gk);
@@ -258,13 +254,13 @@ namespace PhotoStudio.Dialogs
             if (missing != null)
             {
                 Error(missing + (provider == AiProvider.Ollama
-                    ? " Avvia Ollama e premi \"Aggiorna elenco\"."
-                    : " Inserisci la chiave API oppure scegli un altro servizio."));
+                    ? T(" Avvia Ollama e premi \"Aggiorna elenco\".")
+                    : T(" Inserisci la chiave API oppure scegli un altro servizio.")));
                 UpdateKeyStates();
                 return;
             }
             if (provider == AiProvider.Ollama && _ollamaModels.FirstOrDefault(m => m.Name == _settings.OllamaModel)?.Vision == false &&
-                MessageBox.Show(this, $"Il modello \"{_settings.OllamaModel}\" non sembra in grado di vedere le immagini, quindi non potrà valutare la foto.\n\nUsarlo comunque?",
+                MessageBox.Show(this, T("Il modello \"{0}\" non sembra in grado di vedere le immagini, quindi non potrà valutare la foto.\n\nUsarlo comunque?", _settings.OllamaModel),
                     Title, MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
                 return;
 

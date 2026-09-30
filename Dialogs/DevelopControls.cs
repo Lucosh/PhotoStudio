@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using PhotoStudio.Core;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Dialogs
 {
@@ -169,7 +170,7 @@ namespace PhotoStudio.Dialogs
             canvas.MouseMove += (s, e) => { if (e.LeftButton == MouseButtonState.Pressed && canvas.IsMouseCaptured) Pick(e.GetPosition(canvas)); };
             canvas.MouseLeftButtonUp += (s, e) => canvas.ReleaseMouseCapture();
             Children.Add(canvas);
-            ToolTip = "Trascina per scegliere il colore (distanza dal centro = intensità). Doppio clic per azzerare.";
+            ToolTip = T("Trascina per scegliere il colore (distanza dal centro = intensità). Doppio clic per azzerare.");
             Place();
         }
 

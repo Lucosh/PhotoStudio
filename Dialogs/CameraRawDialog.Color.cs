@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using PhotoStudio.Core;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Dialogs
 {
@@ -25,10 +26,10 @@ namespace PhotoStudio.Dialogs
         Panel BuildCurveTab()
         {
             var p = TabPanel();
-            Section(p, "CURVA DI TONO");
+            Section(p, T("CURVA DI TONO"));
             var row = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
-            row.Children.Add(new TextBlock { Text = "Canale:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
-            _curveChannel = new ComboBox { Width = 120, SelectedIndex = 0, ItemsSource = new[] { "RGB (luce)", "Rosso", "Verde", "Blu" }, HorizontalAlignment = HorizontalAlignment.Left };
+            row.Children.Add(new TextBlock { Text = T("Canale:"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
+            _curveChannel = new ComboBox { Width = 120, SelectedIndex = 0, ItemsSource = new[] { T("RGB (luce)"), T("Rosso"), T("Verde"), T("Blu") }, HorizontalAlignment = HorizontalAlignment.Left };
             _curveChannel.SelectionChanged += (s, e) => RefreshCurve();
             row.Children.Add(_curveChannel);
             p.Children.Add(row);
@@ -41,7 +42,7 @@ namespace PhotoStudio.Dialogs
             };
             p.Children.Add(_curve);
 
-            p.Children.Add(new TextBlock { Text = "Curve pronte:", Foreground = Res("TextDimBrush"), Margin = new Thickness(0, 10, 0, 4) });
+            p.Children.Add(new TextBlock { Text = T("Curve pronte:"), Foreground = Res("TextDimBrush"), Margin = new Thickness(0, 10, 0, 4) });
             var presets = new WrapPanel();
             void Preset(string name, double[] pts, string tip)
             {
@@ -54,15 +55,15 @@ namespace PhotoStudio.Dialogs
                 };
                 presets.Children.Add(b);
             }
-            Preset("Lineare", null, "Nessuna curva");
-            Preset("Contrasto medio", new[] { 0, 0, 0.25, 0.21, 0.75, 0.79, 1, 1 }, "Curva a S leggera");
-            Preset("Contrasto forte", new[] { 0, 0, 0.25, 0.16, 0.75, 0.85, 1, 1 }, "Curva a S marcata");
-            Preset("Dissolvenza", new[] { 0, 0.08, 0.3, 0.3, 0.75, 0.77, 1, 0.96 }, "Neri sollevati e bianchi smorzati: look opaco da pellicola");
-            Preset("Schiarisci", new[] { 0, 0, 0.5, 0.6, 1, 1 }, "Mezzitoni più chiari");
-            Preset("Scurisci", new[] { 0, 0, 0.5, 0.4, 1, 1 }, "Mezzitoni più scuri");
+            Preset(T("Lineare"), null, T("Nessuna curva"));
+            Preset(T("Contrasto medio"), new[] { 0, 0, 0.25, 0.21, 0.75, 0.79, 1, 1 }, T("Curva a S leggera"));
+            Preset(T("Contrasto forte"), new[] { 0, 0, 0.25, 0.16, 0.75, 0.85, 1, 1 }, T("Curva a S marcata"));
+            Preset(T("Dissolvenza"), new[] { 0, 0.08, 0.3, 0.3, 0.75, 0.77, 1, 0.96 }, T("Neri sollevati e bianchi smorzati: look opaco da pellicola"));
+            Preset(T("Schiarisci"), new[] { 0, 0, 0.5, 0.6, 1, 1 }, T("Mezzitoni più chiari"));
+            Preset(T("Scurisci"), new[] { 0, 0, 0.5, 0.4, 1, 1 }, T("Mezzitoni più scuri"));
             p.Children.Add(presets);
 
-            var resetAll = new Button { Content = "Azzera tutte le curve", Padding = new Thickness(8, 3, 8, 3), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 0) };
+            var resetAll = new Button { Content = T("Azzera tutte le curve"), Padding = new Thickness(8, 3, 8, 3), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 0) };
             resetAll.Click += (s, e) =>
             {
                 _s.CurveRgb = _s.CurveR = _s.CurveG = _s.CurveB = null;
@@ -70,8 +71,7 @@ namespace PhotoStudio.Dialogs
                 Edited();
             };
             p.Children.Add(resetAll);
-            p.Children.Add(Hint("Clic sulla curva per aggiungere un punto, trascinalo per modificarlo, clic destro per eliminarlo. " +
-                                "In alto a destra le luci, in basso a sinistra le ombre. I canali Rosso, Verde e Blu cambiano i colori."));
+            p.Children.Add(Hint(T("Clic sulla curva per aggiungere un punto, trascinalo per modificarlo, clic destro per eliminarlo. In alto a destra le luci, in basso a sinistra le ombre. I canali Rosso, Verde e Blu cambiano i colori.")));
             return p;
         }
 
@@ -103,9 +103,9 @@ namespace PhotoStudio.Dialogs
         Panel BuildColorTab()
         {
             var p = TabPanel();
-            Section(p, "MIX COLORI");
+            Section(p, T("MIX COLORI"));
             var selector = new UniformGrid { Rows = 1, Margin = new Thickness(0, 0, 0, 6) };
-            string[] titles = { "Tonalità", "Saturazione", "Luminanza" };
+            string[] titles = { T("Tonalità"), T("Saturazione"), T("Luminanza") };
             for (int prop = 0; prop < 3; prop++)
             {
                 int k = prop;
@@ -121,9 +121,9 @@ namespace PhotoStudio.Dialogs
                         x => MixArray(x, k)[ci], (x, v) => MixArray(x, k)[ci] = v, MixTrack(k, ci),
                         tip: k switch
                         {
-                            0 => $"Sposta la tinta dei {RawSettings.MixNames[c].ToLowerInvariant()} verso il colore vicino",
-                            1 => $"Più o meno intensi i {RawSettings.MixNames[c].ToLowerInvariant()}",
-                            _ => $"Più chiari o più scuri i {RawSettings.MixNames[c].ToLowerInvariant()} (es. Blu -40 scurisce il cielo)",
+                            0 => T("Sposta la tinta dei {0} verso il colore vicino", InSentence(RawSettings.MixNames[c])),
+                            1 => T("Più o meno intensi i {0}", InSentence(RawSettings.MixNames[c])),
+                            _ => T("Più chiari o più scuri i {0} (es. Blu -40 scurisce il cielo)", InSentence(RawSettings.MixNames[c])),
                         });
                 }
                 _mixPanels[k] = sp;
@@ -131,7 +131,7 @@ namespace PhotoStudio.Dialogs
             }
             p.Children.Add(selector);
             foreach (var sp in _mixPanels) p.Children.Add(sp);
-            var resetMix = new Button { Content = "Azzera il mix colori", Padding = new Thickness(8, 3, 8, 3), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 6, 0, 0) };
+            var resetMix = new Button { Content = T("Azzera il mix colori"), Padding = new Thickness(8, 3, 8, 3), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 6, 0, 0) };
             resetMix.Click += (s, e) =>
             {
                 _s.MixHue = new double[8]; _s.MixSat = new double[8]; _s.MixLum = new double[8];
@@ -140,14 +140,14 @@ namespace PhotoStudio.Dialogs
             };
             p.Children.Add(resetMix);
 
-            Section(p, "COLOR GRADING");
+            Section(p, T("COLOR GRADING"));
             var wheels = new UniformGrid { Rows = 1, Margin = new Thickness(0, 0, 0, 6) };
-            (_wheelS, _lumS) = Wheel(wheels, "Ombre", (x, h, sa) => { x.ShadowHue = h; x.ShadowSat = sa; }, (x, v) => x.ShadowLum = v);
-            (_wheelM, _lumM) = Wheel(wheels, "Mezzitoni", (x, h, sa) => { x.MidHue = h; x.MidSat = sa; }, (x, v) => x.MidLum = v);
-            (_wheelH, _lumH) = Wheel(wheels, "Luci", (x, h, sa) => { x.HighHue = h; x.HighSat = sa; }, (x, v) => x.HighLum = v);
+            (_wheelS, _lumS) = Wheel(wheels, T("Ombre"), (x, h, sa) => { x.ShadowHue = h; x.ShadowSat = sa; }, (x, v) => x.ShadowLum = v);
+            (_wheelM, _lumM) = Wheel(wheels, T("Mezzitoni"), (x, h, sa) => { x.MidHue = h; x.MidSat = sa; }, (x, v) => x.MidLum = v);
+            (_wheelH, _lumH) = Wheel(wheels, T("Luci"), (x, h, sa) => { x.HighHue = h; x.HighSat = sa; }, (x, v) => x.HighLum = v);
             p.Children.Add(wheels);
-            Row(p, "Fusione", 0, 100, 0, x => x.GradeBlending, (x, v) => x.GradeBlending = v, reset: 50, tip: "Quanto si sovrappongono le tre zone");
-            Row(p, "Bilanciamento", -100, 100, 0, x => x.GradeBalance, (x, v) => x.GradeBalance = v, tip: "Sposta il confine tra ombre e luci");
+            Row(p, T("Fusione"), 0, 100, 0, x => x.GradeBlending, (x, v) => x.GradeBlending = v, reset: 50, tip: T("Quanto si sovrappongono le tre zone"));
+            Row(p, T("Bilanciamento"), -100, 100, 0, x => x.GradeBalance, (x, v) => x.GradeBalance = v, tip: T("Sposta il confine tra ombre e luci"));
             var looks = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
             void Look(string name, double sh, double ss, double hh, double hs)
             {
@@ -161,13 +161,12 @@ namespace PhotoStudio.Dialogs
                 };
                 looks.Children.Add(b);
             }
-            Look("Cinema (verde-azzurro / arancio)", 190, 30, 35, 25);
-            Look("Caldo", 30, 12, 45, 22);
-            Look("Freddo", 215, 25, 200, 10);
-            Look("Nessuno", 0, 0, 0, 0);
+            Look(T("Cinema (verde-azzurro / arancio)"), 190, 30, 35, 25);
+            Look(T("Caldo"), 30, 12, 45, 22);
+            Look(T("Freddo"), 215, 25, 200, 10);
+            Look(T("Nessuno"), 0, 0, 0, 0);
             p.Children.Add(looks);
-            p.Children.Add(Hint("Trascina il punto nella ruota per colorare ombre, mezzitoni o luci; più lontano dal centro = più intenso. " +
-                                "Il cursore sotto ogni ruota schiarisce o scurisce quella zona. Doppio clic sulla ruota per azzerarla."));
+            p.Children.Add(Hint(T("Trascina il punto nella ruota per colorare ombre, mezzitoni o luci; più lontano dal centro = più intenso. Il cursore sotto ogni ruota schiarisce o scurisce quella zona. Doppio clic sulla ruota per azzerarla.")));
             ShowMix(0);
             return p;
         }
@@ -224,7 +223,7 @@ namespace PhotoStudio.Dialogs
                 Edited();
             };
             sp.Children.Add(wheel);
-            var lum = new Slider { Minimum = -100, Maximum = 100, Margin = new Thickness(0, 6, 0, 0), ToolTip = "Luminanza: schiarisce o scurisce " + title.ToLowerInvariant() };
+            var lum = new Slider { Minimum = -100, Maximum = 100, Margin = new Thickness(0, 6, 0, 0), ToolTip = T("Luminanza: schiarisce o scurisce {0}", InSentence(title)) };
             lum.ValueChanged += (s, e) =>
             {
                 if (_colorLoading) return;

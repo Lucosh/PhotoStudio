@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Dialogs
 {
@@ -58,7 +59,7 @@ namespace PhotoStudio.Dialogs
 
             OkButton = new Button { Content = "OK", IsDefault = true, MinWidth = 84, Margin = new Thickness(8, 0, 0, 0) };
             OkButton.Click += (s, e) => OnOk();
-            CancelButton = new Button { Content = "Annulla", IsCancel = true, MinWidth = 84, Margin = new Thickness(8, 0, 0, 0) };
+            CancelButton = new Button { Content = T("Annulla"), IsCancel = true, MinWidth = 84, Margin = new Thickness(8, 0, 0, 0) };
             ButtonBar = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(18, 8, 18, 16) };
             ButtonBar.Children.Add(OkButton);
             ButtonBar.Children.Add(CancelButton);

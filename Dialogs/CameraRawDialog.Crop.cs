@@ -5,6 +5,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using PhotoStudio.Core;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Dialogs
 {
@@ -15,8 +16,8 @@ namespace PhotoStudio.Dialogs
 
         static readonly (string Name, double Ratio)[] Aspects =
         {
-            ("Originale", 0), ("Libero", -1), ("1:1 quadrato", 1), ("4:5 verticale", 0.8), ("5:4", 1.25),
-            ("3:2", 1.5), ("2:3 verticale", 2 / 3.0), ("16:9", 16 / 9.0), ("9:16 verticale", 9 / 16.0),
+            (T("Originale"), 0), (T("Libero"), -1), (T("1:1 quadrato"), 1), (T("4:5 verticale"), 0.8), ("5:4", 1.25),
+            ("3:2", 1.5), (T("2:3 verticale"), 2 / 3.0), ("16:9", 16 / 9.0), (T("9:16 verticale"), 9 / 16.0),
         };
 
         ComboBox _aspect;
@@ -27,10 +28,10 @@ namespace PhotoStudio.Dialogs
         Panel BuildCropTab()
         {
             var p = TabPanel();
-            Section(p, "RADDRIZZA");
-            Row(p, "Angolo", -45, 45, 1, x => x.Angle, (x, v) => x.Angle = v,
+            Section(p, T("RADDRIZZA"));
+            Row(p, T("Angolo"), -45, 45, 1, x => x.Angle, (x, v) => x.Angle = v,
                 changed: () => { FitAspect(false); UpdateOverlay(); },
-                tip: "Ruota la foto per raddrizzare l'orizzonte; il ritaglio si stringe da solo per non lasciare angoli vuoti");
+                tip: T("Ruota la foto per raddrizzare l'orizzonte; il ritaglio si stringe da solo per non lasciare angoli vuoti"));
             var quick = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
             foreach (var d in new[] { -1.0, -0.5, 0.5, 1.0 })
             {
@@ -47,9 +48,9 @@ namespace PhotoStudio.Dialogs
             }
             p.Children.Add(quick);
 
-            Section(p, "RITAGLIO");
+            Section(p, T("RITAGLIO"));
             var row = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
-            row.Children.Add(new TextBlock { Text = "Proporzioni:", VerticalAlignment = VerticalAlignment.Center, Width = 96 });
+            row.Children.Add(new TextBlock { Text = T("Proporzioni:"), VerticalAlignment = VerticalAlignment.Center, Width = 96 });
             _aspect = new ComboBox();
             foreach (var a in Aspects) _aspect.Items.Add(a.Name);
             _aspect.SelectedIndex = 0;
@@ -64,7 +65,7 @@ namespace PhotoStudio.Dialogs
             p.Children.Add(row);
 
             var buttons = new WrapPanel();
-            var resetCrop = new Button { Content = "Ritaglio completo", Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 6, 6), ToolTip = "La cornice torna grande quanto la foto" };
+            var resetCrop = new Button { Content = T("Ritaglio completo"), Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 6, 6), ToolTip = T("La cornice torna grande quanto la foto") };
             resetCrop.Click += (s, e) =>
             {
                 _s.CropL = _s.CropT = 0; _s.CropR = _s.CropB = 1;
@@ -72,7 +73,7 @@ namespace PhotoStudio.Dialogs
                 UpdateOverlay();
                 Edited();
             };
-            var resetAll = new Button { Content = "Azzera raddrizza e ritaglio", Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 6, 6) };
+            var resetAll = new Button { Content = T("Azzera raddrizza e ritaglio"), Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 6, 6) };
             resetAll.Click += (s, e) =>
             {
                 StripGeometry(_s);
@@ -84,8 +85,7 @@ namespace PhotoStudio.Dialogs
             buttons.Children.Add(resetCrop);
             buttons.Children.Add(resetAll);
             p.Children.Add(buttons);
-            p.Children.Add(Hint("Trascina gli angoli o i lati della cornice sulla foto; trascina all'interno per spostarla. " +
-                                "In questa scheda vedi la foto intera: nelle altre schede vedi il risultato ritagliato. L'originale non viene mai tagliato."));
+            p.Children.Add(Hint(T("Trascina gli angoli o i lati della cornice sulla foto; trascina all'interno per spostarla. In questa scheda vedi la foto intera: nelle altre schede vedi il risultato ritagliato. L'originale non viene mai tagliato.")));
 
             _overlay.MouseLeftButtonDown += Crop_Down;
             _overlay.MouseMove += Crop_Move;

@@ -21,6 +21,7 @@ using Polygon = System.Windows.Shapes.Polygon;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using PhotoStudio.Core;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Dialogs
 {
@@ -118,7 +119,7 @@ namespace PhotoStudio.Dialogs
             _items = new ObservableCollection<PhotoItem>(_all);
             _thumbs = new ThumbnailLoader(_items);
 
-            Title = "Preselezione — " + folder;
+            Title = T("Preselezione — {0}", folder);
             Width = 1400;
             Height = 900;
             MinWidth = 1000;
@@ -141,46 +142,46 @@ namespace PhotoStudio.Dialogs
 
             // ---- Top bar
             var top = new DockPanel { Background = Res("PanelHeaderBg"), Height = 48, LastChildFill = true };
-            var close = new Button { Content = "Chiudi", Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(8, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center, Focusable = false };
+            var close = new Button { Content = T("Chiudi"), Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(8, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center, Focusable = false };
             close.Click += (s, e) => Close();
             DockPanel.SetDock(close, Dock.Right);
             top.Children.Add(close);
             var finish = new Button
             {
-                Content = "Fine selezione: modifica le foto  ▶", Padding = new Thickness(14, 5, 14, 5), VerticalAlignment = VerticalAlignment.Center, Focusable = false,
+                Content = T("Fine selezione: modifica le foto  ▶"), Padding = new Thickness(14, 5, 14, 5), VerticalAlignment = VerticalAlignment.Center, Focusable = false,
                 Background = Res("AccentBrush"), BorderBrush = Res("AccentBrush"), Foreground = Brushes.White, FontWeight = FontWeights.SemiBold,
-                ToolTip = "Apre le foto rimaste (quelle che corrispondono al filtro) per modificarle una alla volta (Invio)",
+                ToolTip = T("Apre le foto rimaste (quelle che corrispondono al filtro) per modificarle una alla volta (Invio)"),
             };
             finish.Click += (s, e) => ShowFinish(false);
             DockPanel.SetDock(finish, Dock.Right);
             top.Children.Add(finish);
 
             var filters = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 16, 0) };
-            filters.Children.Add(new TextBlock { Text = "Mostra:", Foreground = Res("TextDimBrush"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
+            filters.Children.Add(new TextBlock { Text = T("Mostra:"), Foreground = Res("TextDimBrush"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
             _ratingFilter = new ComboBox
             {
                 Width = 120, Focusable = false, SelectedIndex = 0,
-                ItemsSource = new[] { "Tutte le stelle", "★ o più", "★★ o più", "★★★ o più", "★★★★ o più", "★★★★★" },
-                ToolTip = "Mostra solo le foto con almeno queste stelle (0-5 per assegnarle)",
+                ItemsSource = new[] { T("Tutte le stelle"), T("★ o più"), T("★★ o più"), T("★★★ o più"), T("★★★★ o più"), "★★★★★" },
+                ToolTip = T("Mostra solo le foto con almeno queste stelle (0-5 per assegnarle)"),
             };
             _labelFilter = new ComboBox
             {
                 Width = 120, Focusable = false, SelectedIndex = 0, Margin = new Thickness(6, 0, 0, 0),
-                ItemsSource = new[] { "Tutti i colori", "Rosso", "Giallo", "Verde", "Blu", "Viola", "Senza colore" },
-                ToolTip = "Mostra solo le foto con questa etichetta colore (6 rosso, 7 giallo, 8 verde, 9 blu)",
+                ItemsSource = new[] { T("Tutti i colori"), T("Rosso"), T("Giallo"), T("Verde"), T("Blu"), T("Viola"), T("Senza colore") },
+                ToolTip = T("Mostra solo le foto con questa etichetta colore (6 rosso, 7 giallo, 8 verde, 9 blu)"),
             };
             _ratingFilter.SelectionChanged += (s, e) => RebuildView(null);
             _labelFilter.SelectionChanged += (s, e) => RebuildView(null);
             filters.Children.Add(_ratingFilter);
             filters.Children.Add(_labelFilter);
-            _compareButton = new Button { Content = "Confronta", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(12, 0, 0, 0), Focusable = false, ToolTip = "Foto affiancate: 1 → 2 → 4 (C). Con B confronti la raffica." };
+            _compareButton = new Button { Content = T("Confronta"), Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(12, 0, 0, 0), Focusable = false, ToolTip = T("Foto affiancate: 1 → 2 → 4 (C). Con B confronti la raffica.") };
             _compareButton.Click += (s, e) => CycleCompare();
             filters.Children.Add(_compareButton);
             DockPanel.SetDock(filters, Dock.Right);
             top.Children.Add(filters);
 
             var titles = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) };
-            titles.Children.Add(new TextBlock { Text = "PRESELEZIONE", FontWeight = FontWeights.SemiBold, Foreground = Res("TextDimBrush"), Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center });
+            titles.Children.Add(new TextBlock { Text = T("PRESELEZIONE"), FontWeight = FontWeights.SemiBold, Foreground = Res("TextDimBrush"), Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center });
             titles.Children.Add(new TextBlock { Text = Path.GetFileName(folder.TrimEnd('\\', '/')) is { Length: > 0 } n ? n : folder, FontSize = 14, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
             _counter = new TextBlock { Foreground = Res("TextDimBrush"), Margin = new Thickness(16, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
             titles.Children.Add(_counter);
@@ -224,7 +225,7 @@ namespace PhotoStudio.Dialogs
 
             _empty = new TextBlock
             {
-                Text = "Nessuna foto da mostrare.", FontSize = 16, Foreground = Res("TextDimBrush"),
+                Text = T("Nessuna foto da mostrare."), FontSize = 16, Foreground = Res("TextDimBrush"),
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed,
             };
             stage.Children.Add(_empty);
@@ -278,8 +279,7 @@ namespace PhotoStudio.Dialogs
                 Background = Res("PanelHeaderBg"), Height = 30, BorderBrush = Res("DividerBrush"), BorderThickness = new Thickness(0, 1, 0, 0),
                 Child = new TextBlock
                 {
-                    Text = "← →  scorri   ·   0-5  stelle   ·   6-9  colore   ·   C  confronta   ·   B  raffica   ·   Ctrl+← →  raffica prec./succ.   ·   " +
-                           "Z o clic  zoom 100%   ·   H  istogramma   ·   J  bruciati   ·   Canc  Cestino   ·   Ctrl+Z  ripristina   ·   Invio  fine",
+                    Text = T("← →  scorri   ·   0-5  stelle   ·   6-9  colore   ·   C  confronta   ·   B  raffica   ·   Ctrl+← →  raffica prec./succ.   ·   Z o clic  zoom 100%   ·   H  istogramma   ·   J  bruciati   ·   Canc  Cestino   ·   Ctrl+Z  ripristina   ·   Invio  fine"),
                     Foreground = Res("TextDimBrush"), VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center,
                     TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(10, 0, 10, 0),
                 },
@@ -298,23 +298,22 @@ namespace PhotoStudio.Dialogs
             card.Children.Add(new TextBlock
             {
                 TextWrapping = TextWrapping.Wrap, Foreground = Res("TextDimBrush"), Margin = new Thickness(0, 0, 0, 10),
-                Text = "Le foto verranno aperte una alla volta nella cartella di modifica, in basso nella finestra principale. " +
-                       "Scegli dove salvare le foto modificate (gli originali non vengono mai sovrascritti):",
+                Text = T("Le foto verranno aperte una alla volta nella cartella di modifica, in basso nella finestra principale. Scegli dove salvare le foto modificate (gli originali non vengono mai sovrascritti):"),
             });
             var outRow = new DockPanel { Margin = new Thickness(0, 0, 0, 20) };
-            var browse = new Button { Content = "Sfoglia...", Padding = new Thickness(12, 3, 12, 3), Margin = new Thickness(8, 0, 0, 0) };
+            var browse = new Button { Content = T("Sfoglia..."), Padding = new Thickness(12, 3, 12, 3), Margin = new Thickness(8, 0, 0, 0) };
             browse.Click += (s, e) => BrowseOutput();
             DockPanel.SetDock(browse, Dock.Right);
             outRow.Children.Add(browse);
-            _output = new TextBox { Height = 26, Text = _state.Batch?.OutputFolder ?? Path.Combine(folder, "Modificate") };
+            _output = new TextBox { Height = 26, Text = _state.Batch?.OutputFolder ?? Path.Combine(folder, T("Modificate")) };
             outRow.Children.Add(_output);
             card.Children.Add(outRow);
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            var back = new Button { Content = "Continua la preselezione", Padding = new Thickness(14, 5, 14, 5) };
+            var back = new Button { Content = T("Continua la preselezione"), Padding = new Thickness(14, 5, 14, 5) };
             back.Click += (s, e) => HideFinish();
             _openButton = new Button
             {
-                Content = "Apri per la modifica", Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(8, 0, 0, 0),
+                Content = T("Apri per la modifica"), Padding = new Thickness(16, 5, 16, 5), Margin = new Thickness(8, 0, 0, 0),
                 Background = Res("AccentBrush"), BorderBrush = Res("AccentBrush"), Foreground = Brushes.White, FontWeight = FontWeights.SemiBold,
             };
             _openButton.Click += (s, e) => ConfirmFinish();
@@ -343,7 +342,7 @@ namespace PhotoStudio.Dialogs
                 _thumbs.Focus = _index;
                 _thumbs.Kick();
                 ShowCurrent();
-                if (last != null && _index > 0) Toast($"Riprendi da dove eri rimasto: {last.Name}");
+                if (last != null && _index > 0) Toast(T("Riprendi da dove eri rimasto: {0}", last.Name));
                 LoadAllMetadata();
             };
         }
@@ -368,7 +367,7 @@ namespace PhotoStudio.Dialogs
         {
             var parts = new List<string>();
             if (_ratingFilter.SelectedIndex > 0) parts.Add((string)_ratingFilter.SelectedItem);
-            if (_labelFilter.SelectedIndex > 0) parts.Add("etichetta " + ((string)_labelFilter.SelectedItem).ToLowerInvariant());
+            if (_labelFilter.SelectedIndex > 0) parts.Add(T("etichetta {0}", InSentence((string)_labelFilter.SelectedItem)));
             return string.Join(", ", parts);
         }
 
@@ -392,7 +391,7 @@ namespace PhotoStudio.Dialogs
             _index = i;
             _thumbs.Kick();
             ShowCurrent();
-            if (FilterActive) Toast(_items.Count == 0 ? "Nessuna foto corrisponde al filtro." : $"{_items.Count} foto con {FilterDescription()}.");
+            if (FilterActive) Toast(_items.Count == 0 ? T("Nessuna foto corrisponde al filtro.") : T("{0} foto con {1}.", _items.Count, FilterDescription()));
         }
 
         // ================= Navigation =================
@@ -434,7 +433,7 @@ namespace PhotoStudio.Dialogs
                 case Key.J when mods == ModifierKeys.None:
                     _showClipping = !_showClipping;
                     foreach (var p in _panes) UpdateClipping(p);
-                    Toast(_showClipping ? "Avviso bruciati attivo: rosso = luci bruciate, blu = ombre chiuse (J per nasconderlo)" : "Avviso bruciati nascosto.");
+                    Toast(_showClipping ? T("Avviso bruciati attivo: rosso = luci bruciate, blu = ombre chiuse (J per nasconderlo)") : T("Avviso bruciati nascosto."));
                     break;
                 case Key.Enter: ShowFinish(false); break;
                 case Key.Escape:
@@ -469,7 +468,7 @@ namespace PhotoStudio.Dialogs
         {
             var item = Current;
             if (item == null) return;
-            if (!_burstsReady) Toast("Sto ancora leggendo gli orari di scatto per trovare le raffiche...");
+            if (!_burstsReady) Toast(T("Sto ancora leggendo gli orari di scatto per trovare le raffiche..."));
             int i = _index;
             if (dir > 0)
             {
@@ -491,7 +490,7 @@ namespace PhotoStudio.Dialogs
         {
             var item = Current;
             _empty.Visibility = item == null ? Visibility.Visible : Visibility.Collapsed;
-            _empty.Text = _all.Count == 0 ? "Nessuna foto rimasta in questa cartella." : "Nessuna foto corrisponde al filtro.";
+            _empty.Text = _all.Count == 0 ? T("Nessuna foto rimasta in questa cartella.") : T("Nessuna foto corrisponde al filtro.");
             if (item == null)
             {
                 _zoom = false;
@@ -531,11 +530,11 @@ namespace PhotoStudio.Dialogs
 
         void UpdateCounter()
         {
-            string text = _items.Count == 0 ? "nessuna foto" : $"Foto {_index + 1} di {_items.Count}";
-            if (FilterActive) text += $" (filtro: {FilterDescription()} · {_all.Count} in totale)";
-            if (_deletedCount > 0) text += $"     ·     {_deletedCount} nel Cestino";
+            string text = _items.Count == 0 ? T("nessuna foto") : T("Foto {0} di {1}", _index + 1, _items.Count);
+            if (FilterActive) text += T(" (filtro: {0} · {1} in totale)", FilterDescription(), _all.Count);
+            if (_deletedCount > 0) text += T("     ·     {0} nel Cestino", _deletedCount);
             _counter.Text = text;
-            _compareButton.Content = _paneCount == 1 ? "Confronta" : $"Confronto: {_paneCount}";
+            _compareButton.Content = _paneCount == 1 ? T("Confronta") : T("Confronto: {0}", _paneCount);
         }
 
         void UpdateInfo(PhotoItem item)
@@ -543,8 +542,8 @@ namespace PhotoStudio.Dialogs
             _fileName.Text = item.Name + (item.Rating > 0 ? "    " + item.RatingText : "");
             _labelDot.Background = item.LabelBrush;
             _labelDot.Visibility = item.Label == PhotoLabel.None ? Visibility.Collapsed : Visibility.Visible;
-            var parts = new List<string> { item.Badge, $"{_index + 1} di {_items.Count}" };
-            if (item.BurstCount > 1) parts.Add($"raffica: foto {item.BurstIndex} di {item.BurstCount}");
+            var parts = new List<string> { item.Badge, T("{0} di {1}", _index + 1, _items.Count) };
+            if (item.BurstCount > 1) parts.Add(T("raffica: foto {0} di {1}", item.BurstIndex, item.BurstCount));
             _fileInfo.Text = string.Join("   ·   ", parts);
             _exifInfo.Text = item.Metadata?.Summary() ?? "";
             _exifInfo.Visibility = _exifInfo.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -561,7 +560,7 @@ namespace PhotoStudio.Dialogs
             _state.Remember(item);
             _state.Save();
             UpdateInfo(item);
-            Toast(stars == 0 ? $"{item.Name}: nessuna stella" : $"{item.Name}: {item.RatingText}");
+            Toast(stars == 0 ? T("{0}: nessuna stella", item.Name) : $"{item.Name}: {item.RatingText}");
         }
 
         void ToggleLabel(PhotoLabel label)
@@ -572,7 +571,7 @@ namespace PhotoStudio.Dialogs
             _state.Remember(item);
             _state.Save();
             UpdateInfo(item);
-            Toast(item.Label == PhotoLabel.None ? $"{item.Name}: etichetta rimossa" : $"{item.Name}: etichetta {LabelColors.Names[(int)item.Label].ToLowerInvariant()}");
+            Toast(item.Label == PhotoLabel.None ? T("{0}: etichetta rimossa", item.Name) : T("{0}: etichetta {1}", item.Name, InSentence(LabelColors.Names[(int)item.Label])));
         }
 
         // ================= Panes / compare =================
@@ -584,23 +583,23 @@ namespace PhotoStudio.Dialogs
             _paneCount = count;
             if (count > 1) _base = _index;   // the current photo and the next ones
             ShowCurrent();
-            if (count > 1) Toast($"Confronto: {count} foto affiancate. Clic su una foto per sceglierla, Z per lo zoom sincronizzato, Esc per uscire.");
+            if (count > 1) Toast(T("Confronto: {0} foto affiancate. Clic su una foto per sceglierla, Z per lo zoom sincronizzato, Esc per uscire.", count));
         }
 
         void CompareBurst()
         {
             var item = Current;
             if (item == null) return;
-            if (!_burstsReady) { Toast("Sto ancora leggendo gli orari di scatto per trovare le raffiche..."); return; }
-            if (item.BurstCount < 2) { Toast("Questa foto non fa parte di una raffica."); return; }
+            if (!_burstsReady) { Toast(T("Sto ancora leggendo gli orari di scatto per trovare le raffiche...")); return; }
+            if (item.BurstCount < 2) { Toast(T("Questa foto non fa parte di una raffica.")); return; }
             var burst = _items.Where(p => p.BurstId == item.BurstId).ToList();
-            if (burst.Count < 2) { Toast("Con il filtro attuale in questa raffica c'è una sola foto."); return; }
+            if (burst.Count < 2) { Toast(T("Con il filtro attuale in questa raffica c'è una sola foto.")); return; }
             _paneCount = Math.Clamp(burst.Count, 2, 4);
             _base = _items.IndexOf(burst[0]);
             ShowCurrent();
             Toast(burst.Count > 4
-                ? $"Raffica di {burst.Count} foto: le confronti 4 alla volta, con le frecce scorri. Canc elimina quella evidenziata."
-                : $"Raffica di {burst.Count} foto affiancate. Clic per scegliere, Canc elimina quella evidenziata.");
+                ? T("Raffica di {0} foto: le confronti 4 alla volta, con le frecce scorri. Canc elimina quella evidenziata.", burst.Count)
+                : T("Raffica di {0} foto affiancate. Clic per scegliere, Canc elimina quella evidenziata.", burst.Count));
         }
 
         void EnsurePanes(int n)
@@ -656,7 +655,7 @@ namespace PhotoStudio.Dialogs
             };
             p.Loading = new TextBlock
             {
-                Text = "Caricamento...", Foreground = Res("TextDimBrush"), Margin = new Thickness(0, 14, 0, 0), IsHitTestVisible = false,
+                Text = T("Caricamento..."), Foreground = Res("TextDimBrush"), Margin = new Thickness(0, 14, 0, 0), IsHitTestVisible = false,
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Top, Visibility = Visibility.Collapsed,
             };
             p.Frame = new Border
@@ -691,7 +690,7 @@ namespace PhotoStudio.Dialogs
             else
             {
                 p.Image.Source = item.Thumbnail;   // blurry placeholder while the large preview loads
-                p.Loading.Text = "Caricamento...";
+                p.Loading.Text = T("Caricamento...");
                 p.Loading.Visibility = Visibility.Visible;
                 RequestPreview(item);
             }
@@ -752,7 +751,7 @@ namespace PhotoStudio.Dialogs
             }
             foreach (var p in _panes.Where(p => p.Item == item))
             {
-                if (bmp == null) { p.Loading.Text = "Impossibile leggere questa foto: " + error; p.Loading.Visibility = Visibility.Visible; continue; }
+                if (bmp == null) { p.Loading.Text = T("Impossibile leggere questa foto: {0}", error); p.Loading.Visibility = Visibility.Visible; continue; }
                 UpdateClipping(p);
                 if (_zoom) continue;
                 p.Image.Source = bmp;
@@ -802,7 +801,7 @@ namespace PhotoStudio.Dialogs
             if (!_analysis.TryGetValue(item, out var a))
             {
                 _hR.Points = _hG.Points = _hB.Points = null;
-                _histText.Inlines.Add(new Run("Istogramma in caricamento...") { Foreground = Res("TextDimBrush") });
+                _histText.Inlines.Add(new Run(T("Istogramma in caricamento...")) { Foreground = Res("TextDimBrush") });
                 return;
             }
             int max = 1;
@@ -811,11 +810,11 @@ namespace PhotoStudio.Dialogs
             _hG.Points = Poly(a.G, 96.0 / max);
             _hB.Points = Poly(a.B, 96.0 / max);
             var ok = new SolidColorBrush(Color.FromRgb(0xBB, 0xBB, 0xBB));
-            _histText.Inlines.Add(new Run("Luci bruciate " + Percent(a.Highlights)) { Foreground = a.Highlights >= 0.005 ? new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x6B)) : ok });
+            _histText.Inlines.Add(new Run(T("Luci bruciate {0}", Percent(a.Highlights))) { Foreground = a.Highlights >= 0.005 ? new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x6B)) : ok });
             _histText.Inlines.Add(new Run("     "));
-            _histText.Inlines.Add(new Run("Ombre chiuse " + Percent(a.Shadows)) { Foreground = a.Shadows >= 0.005 ? new SolidColorBrush(Color.FromRgb(0x6B, 0xA8, 0xFF)) : ok });
+            _histText.Inlines.Add(new Run(T("Ombre chiuse {0}", Percent(a.Shadows))) { Foreground = a.Shadows >= 0.005 ? new SolidColorBrush(Color.FromRgb(0x6B, 0xA8, 0xFF)) : ok });
             if (!_showClipping && (a.Highlights >= 0.005 || a.Shadows >= 0.005))
-                _histText.Inlines.Add(new Run("\nJ per vederle sulla foto") { Foreground = Res("TextDimBrush") });
+                _histText.Inlines.Add(new Run(T("\nJ per vederle sulla foto")) { Foreground = Res("TextDimBrush") });
         }
 
         static string Percent(double f) => (f * 100).ToString(f < 0.1 ? "0.0" : "0", CultureInfo.CurrentCulture) + " %";
@@ -906,7 +905,7 @@ namespace PhotoStudio.Dialogs
             if (item == null) return;
             if (p.FullItem != item)
             {
-                p.Loading.Text = "Caricamento a piena risoluzione...";
+                p.Loading.Text = T("Caricamento a piena risoluzione...");
                 p.Loading.Visibility = Visibility.Visible;
                 var shared = _panes.FirstOrDefault(x => x != p && x.FullItem == item);
                 BitmapSource bmp = shared?.Full;
@@ -919,7 +918,7 @@ namespace PhotoStudio.Dialogs
                 if (_closed || !_zoom || p.Item != item) return;
                 if (bmp == null)
                 {
-                    p.Loading.Text = "Impossibile leggere questa foto: " + error;
+                    p.Loading.Text = T("Impossibile leggere questa foto: {0}", error);
                     return;
                 }
                 p.Full = bmp;
@@ -1021,7 +1020,7 @@ namespace PhotoStudio.Dialogs
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Impossibile spostare la foto nel Cestino:\n" + ex.Message, "Preselezione", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(this, T("Impossibile spostare la foto nel Cestino:\n{0}", ex.Message), T("Preselezione"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             if (!moved) return;
@@ -1038,12 +1037,12 @@ namespace PhotoStudio.Dialogs
             if (_burstsReady) PhotoLibrary.MarkBursts(_all);
             ShowCurrent();
             string files = item.Files.Count > 1 ? $" ({item.Badge})" : "";
-            Toast($"{item.Name}{files} spostata nel Cestino.   Ctrl+Z per ripristinarla");
+            Toast(T("{0}{1} spostata nel Cestino.   Ctrl+Z per ripristinarla", item.Name, files));
         }
 
         void UndoDelete()
         {
-            if (_deleted.Count == 0) { Toast("Nessuna foto da ripristinare."); return; }
+            if (_deleted.Count == 0) { Toast(T("Nessuna foto da ripristinare.")); return; }
             var (item, index) = _deleted.Peek();
             var failed = new List<string>();
             foreach (var f in item.Files)
@@ -1053,8 +1052,8 @@ namespace PhotoStudio.Dialogs
             }
             if (!File.Exists(item.EditPath))
             {
-                MessageBox.Show(this, $"Non riesco a ripristinare \"{item.Name}\": puoi recuperarla dal Cestino di Windows.",
-                    "Preselezione", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, T("Non riesco a ripristinare \"{0}\": puoi recuperarla dal Cestino di Windows.", item.Name),
+                    T("Preselezione"), MessageBoxButton.OK, MessageBoxImage.Information);
                 _deleted.Pop();
                 return;
             }
@@ -1063,7 +1062,7 @@ namespace PhotoStudio.Dialogs
             _all.Insert(Math.Clamp(index, 0, _all.Count), item);
             if (_burstsReady) PhotoLibrary.MarkBursts(_all);
             RebuildView(item);
-            Toast(failed.Count == 0 ? $"{item.Name} ripristinata." : $"{item.Name} ripristinata solo in parte: recupera {Path.GetFileName(failed[0])} dal Cestino.");
+            Toast(failed.Count == 0 ? $"{item.Name} ripristinata." : T("{0} ripristinata solo in parte: recupera {1} dal Cestino.", item.Name, Path.GetFileName(failed[0])));
         }
 
         void Toast(string text)
@@ -1080,8 +1079,8 @@ namespace PhotoStudio.Dialogs
         {
             if (_items.Count == 0)
             {
-                if (_all.Count > 0) { Toast("Nessuna foto corrisponde al filtro: cambialo per scegliere quali foto modificare."); return; }
-                if (MessageBox.Show(this, "Non è rimasta nessuna foto da modificare. Chiudere la preselezione?", "Preselezione",
+                if (_all.Count > 0) { Toast(T("Nessuna foto corrisponde al filtro: cambialo per scegliere quali foto modificare.")); return; }
+                if (MessageBox.Show(this, T("Non è rimasta nessuna foto da modificare. Chiudere la preselezione?"), T("Preselezione"),
                         MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
                     DialogResult = false;
@@ -1089,10 +1088,10 @@ namespace PhotoStudio.Dialogs
                 return;
             }
             if (_zoom) ExitZoom();
-            _overlayTitle.Text = reachedEnd ? "Hai visto tutte le foto" : "Fine della preselezione";
-            string summary = $"{_items.Count} foto da modificare";
-            if (FilterActive) summary += $" (solo {FilterDescription()}, su {_all.Count})";
-            summary += _deletedCount == 1 ? "   ·   1 spostata nel Cestino" : _deletedCount > 1 ? $"   ·   {_deletedCount} spostate nel Cestino" : "";
+            _overlayTitle.Text = reachedEnd ? T("Hai visto tutte le foto") : T("Fine della preselezione");
+            string summary = T("{0} foto da modificare", _items.Count);
+            if (FilterActive) summary += T(" (solo {0}, su {1})", FilterDescription(), _all.Count);
+            summary += _deletedCount == 1 ? T("   ·   1 spostata nel Cestino") : _deletedCount > 1 ? T("   ·   {0} spostate nel Cestino", _deletedCount) : "";
             _overlaySummary.Text = summary;
             _overlay.Visibility = Visibility.Visible;
             _openButton.Focus();
@@ -1106,7 +1105,7 @@ namespace PhotoStudio.Dialogs
 
         void BrowseOutput()
         {
-            var dlg = new OpenFolderDialog { Title = "Dove salvare le foto modificate" };
+            var dlg = new OpenFolderDialog { Title = T("Dove salvare le foto modificate") };
             string current = _output.Text.Trim();
             dlg.InitialDirectory = Directory.Exists(current) ? current : _folder;
             if (dlg.ShowDialog(this) == true) _output.Text = dlg.FolderName;
@@ -1122,8 +1121,8 @@ namespace PhotoStudio.Dialogs
             }
             catch
             {
-                MessageBox.Show(this, "Indica una cartella valida in cui salvare le foto modificate (es. C:\\Foto\\Modificate).",
-                    "Preselezione", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(this, T("Indica una cartella valida in cui salvare le foto modificate (es. C:\\Foto\\Modificate)."),
+                    T("Preselezione"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             OutputFolder = path;
@@ -1134,8 +1133,8 @@ namespace PhotoStudio.Dialogs
         {
             if (DialogResult != true && _items.Count > 0 &&
                 MessageBox.Show(this,
-                    "Uscire dalla preselezione senza aprire le foto per la modifica?\n\nStelle ed etichette restano salvate; le foto già eliminate restano nel Cestino di Windows.",
-                    "Preselezione", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    T("Uscire dalla preselezione senza aprire le foto per la modifica?\n\nStelle ed etichette restano salvate; le foto già eliminate restano nel Cestino di Windows."),
+                    T("Preselezione"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             {
                 e.Cancel = true;
                 return;

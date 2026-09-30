@@ -24,7 +24,7 @@
 </p>
 
 > [!NOTE]
-> Por ahora la interfaz está en italiano. El español, el inglés, el alemán y el francés llegarán pronto.
+> La interfaz está en español, inglés, italiano, alemán y francés: PhotoStudio usa el idioma de Windows y puedes cambiarlo en *Vista ▸ Idioma*.
 
 ## Funciones
 

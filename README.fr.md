@@ -24,7 +24,7 @@
 </p>
 
 > [!NOTE]
-> L'interface est pour l'instant en italien. Le français, l'anglais, l'allemand et l'espagnol arrivent bientôt.
+> L'interface existe en français, anglais, italien, allemand et espagnol : PhotoStudio utilise la langue de Windows, et vous pouvez la changer dans *Affichage ▸ Langue*.
 
 ## Fonctionnalités
 

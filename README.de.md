@@ -24,7 +24,7 @@
 </p>
 
 > [!NOTE]
-> Die Benutzeroberfläche ist derzeit auf Italienisch. Deutsch, Englisch, Französisch und Spanisch folgen.
+> Die Oberfläche gibt es auf Deutsch, Englisch, Italienisch, Französisch und Spanisch: PhotoStudio verwendet die Sprache von Windows, ändern kannst du sie unter *Ansicht ▸ Sprache*.
 
 ## Funktionen
 

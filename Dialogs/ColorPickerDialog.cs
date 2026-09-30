@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Dialogs
 {
@@ -55,10 +56,10 @@ namespace PhotoStudio.Dialogs
 
             // Right column
             var right = new StackPanel { Margin = new Thickness(16, 0, 0, 0) };
-            right.Children.Add(new TextBlock { Text = "nuovo", HorizontalAlignment = HorizontalAlignment.Center, Foreground = Brushes.Gray });
+            right.Children.Add(new TextBlock { Text = T("nuovo"), HorizontalAlignment = HorizontalAlignment.Center, Foreground = Brushes.Gray });
             right.Children.Add(_newSwatch);
             right.Children.Add(new Rectangle { Width = 70, Height = 34, Fill = new SolidColorBrush(initial) });
-            right.Children.Add(new TextBlock { Text = "attuale", HorizontalAlignment = HorizontalAlignment.Center, Foreground = Brushes.Gray, Margin = new Thickness(0, 0, 0, 12) });
+            right.Children.Add(new TextBlock { Text = T("attuale"), HorizontalAlignment = HorizontalAlignment.Center, Foreground = Brushes.Gray, Margin = new Thickness(0, 0, 0, 12) });
 
             _hBox = Field(right, "H:", "°");
             _sBox = Field(right, "S:", "%");

@@ -6,19 +6,20 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Core
 {
     public static class ImageIO
     {
-        public static readonly string OpenFilter =
-            "Tutti i formati supportati|*.psx;*.png;*.jpg;*.jpeg;*.jpe;*.bmp;*.gif;*.tif;*.tiff;*.webp;*.heic;*.heif;*.ico;*.jxr;*.wdp;" + RawImage.FilterPattern + "|" +
+        public static string OpenFilter =>
+            T("Tutti i formati supportati") + "|*.psx;*.png;*.jpg;*.jpeg;*.jpe;*.bmp;*.gif;*.tif;*.tiff;*.webp;*.heic;*.heif;*.ico;*.jxr;*.wdp;" + RawImage.FilterPattern + "|" +
             "Camera RAW (CR2, CR3, NEF, ARW, DNG, RAF, ORF, RW2...)|" + RawImage.FilterPattern + "|" +
-            "Progetto PhotoStudio (*.psx)|*.psx|PNG (*.png)|*.png|JPEG (*.jpg;*.jpeg)|*.jpg;*.jpeg;*.jpe|" +
-            "BMP (*.bmp)|*.bmp|TIFF (*.tif;*.tiff)|*.tif;*.tiff|GIF (*.gif)|*.gif|WebP / HEIC|*.webp;*.heic;*.heif|Tutti i file|*.*";
+            T("Progetto PhotoStudio (*.psx)") + "|*.psx|PNG (*.png)|*.png|JPEG (*.jpg;*.jpeg)|*.jpg;*.jpeg;*.jpe|" +
+            "BMP (*.bmp)|*.bmp|TIFF (*.tif;*.tiff)|*.tif;*.tiff|GIF (*.gif)|*.gif|WebP / HEIC|*.webp;*.heic;*.heif|" + T("Tutti i file") + "|*.*";
 
-        public const string SaveFilter =
-            "Progetto PhotoStudio con livelli (*.psx)|*.psx|PNG (*.png)|*.png|JPEG (*.jpg)|*.jpg|" +
+        public static string SaveFilter =>
+            T("Progetto PhotoStudio con livelli (*.psx)") + "|*.psx|PNG (*.png)|*.png|JPEG (*.jpg)|*.jpg|" +
             "BMP (*.bmp)|*.bmp|TIFF (*.tif)|*.tif|GIF (*.gif)|*.gif";
 
         public static (int w, int h, byte[] px) LoadBitmap(string path)

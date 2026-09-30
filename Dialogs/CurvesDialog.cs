@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using PhotoStudio.Core;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Dialogs
 {
@@ -26,15 +27,15 @@ namespace PhotoStudio.Dialogs
         readonly DispatcherTimer _timer;
         int _drag = -1;
 
-        public CurvesDialog(Window owner, byte[] pixels, Action<byte[][]> preview) : base(owner, "Curve")
+        public CurvesDialog(Window owner, byte[] pixels, Action<byte[][]> preview) : base(owner, T("Curve"))
         {
             _preview = preview;
             for (int i = 0; i < 4; i++) _curves[i] = new List<Point> { new Point(0, 0), new Point(255, 255) };
             _histograms = BuildHistograms(pixels);
 
-            _channel = new ComboBox { Width = 120, ItemsSource = new[] { "RGB", "Rosso", "Verde", "Blu" }, SelectedIndex = 0 };
+            _channel = new ComboBox { Width = 120, ItemsSource = new[] { "RGB", T("Rosso"), T("Verde"), T("Blu") }, SelectedIndex = 0 };
             _channel.SelectionChanged += (s, e) => Redraw();
-            Body.Children.Add(Row(Label("Canale:", 60), _channel));
+            Body.Children.Add(Row(Label(T("Canale:"), 60), _channel));
 
             _canvas = new Canvas { Width = S, Height = S, Background = (Brush)Application.Current.FindResource("InputBg"), ClipToBounds = true, Cursor = Cursors.Cross };
             var grid = new SolidColorBrush(Color.FromRgb(70, 70, 70));
@@ -55,12 +56,12 @@ namespace PhotoStudio.Dialogs
             Body.Children.Add(_info);
             Body.Children.Add(new TextBlock
             {
-                Text = "Clic per aggiungere un punto, trascina per modificarlo,\nclic destro per eliminarlo.",
+                Text = T("Clic per aggiungere un punto, trascina per modificarlo,\nclic destro per eliminarlo."),
                 Foreground = (Brush)Application.Current.FindResource("TextDimBrush"),
                 Margin = new Thickness(0, 4, 0, 6),
             });
 
-            var reset = new Button { Content = "Ripristina", MinWidth = 84 };
+            var reset = new Button { Content = T("Ripristina"), MinWidth = 84 };
             reset.Click += (s, e) =>
             {
                 for (int i = 0; i < 4; i++) _curves[i] = new List<Point> { new Point(0, 0), new Point(255, 255) };
@@ -116,7 +117,7 @@ namespace PhotoStudio.Dialogs
         void Canvas_Move(object sender, MouseEventArgs e)
         {
             var p = ToCurve(e.GetPosition(_canvas));
-            _info.Text = $"Input: {p.X:0}   Output: {p.Y:0}";
+            _info.Text = T("Input: {0:0}   Output: {1:0}", p.X, p.Y);
             if (_drag < 0 || e.LeftButton != MouseButtonState.Pressed) return;
             var pts = Current;
             double minX = _drag > 0 ? pts[_drag - 1].X + 1 : 0;

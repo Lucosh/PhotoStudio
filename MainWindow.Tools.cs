@@ -9,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using PhotoStudio.Core;
 using PhotoStudio.Dialogs;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio
 {
@@ -18,11 +19,11 @@ namespace PhotoStudio
 
         static readonly Dictionary<Tool, string> ToolNames = new Dictionary<Tool, string>
         {
-            [Tool.Move] = "Sposta", [Tool.RectSelect] = "Selezione rettangolare", [Tool.EllipseSelect] = "Selezione ellittica",
-            [Tool.Lasso] = "Lazo", [Tool.Wand] = "Bacchetta magica", [Tool.Crop] = "Taglierina", [Tool.Eyedropper] = "Contagocce",
-            [Tool.Brush] = "Pennello", [Tool.Clone] = "Timbro clone", [Tool.Eraser] = "Gomma", [Tool.Bucket] = "Secchiello",
-            [Tool.Gradient] = "Sfumatura", [Tool.Dodge] = "Scherma / Brucia", [Tool.Text] = "Testo", [Tool.Shape] = "Forme",
-            [Tool.Hand] = "Mano", [Tool.Zoom] = "Zoom",
+            [Tool.Move] = T("Sposta"), [Tool.RectSelect] = T("Selezione rettangolare"), [Tool.EllipseSelect] = T("Selezione ellittica"),
+            [Tool.Lasso] = T("Lazo"), [Tool.Wand] = T("Bacchetta magica"), [Tool.Crop] = T("Taglierina"), [Tool.Eyedropper] = T("Contagocce"),
+            [Tool.Brush] = T("Pennello"), [Tool.Clone] = T("Timbro clone"), [Tool.Eraser] = T("Gomma"), [Tool.Bucket] = T("Secchiello"),
+            [Tool.Gradient] = TC("strumento", "Sfumatura"), [Tool.Dodge] = T("Scherma / Brucia"), [Tool.Text] = T("Testo"), [Tool.Shape] = T("Forme"),
+            [Tool.Hand] = T("Mano"), [Tool.Zoom] = T("Zoom"),
         };
 
         Tool _tool;
@@ -38,7 +39,7 @@ namespace PhotoStudio
         int _moveDx, _moveDy;
         List<Point> _lasso;
         Rect? _cropRect;
-        string _lastText = "Testo";
+        string _lastText = T("Testo");
 
         bool IsBrushTool => _tool is Tool.Brush or Tool.Eraser or Tool.Clone or Tool.Dodge;
 
@@ -62,7 +63,7 @@ namespace PhotoStudio
             ToolNameText.Text = ToolNames[t];
             Show(OptBrush, IsBrushTool);
             Show(DodgeMode, t == Tool.Dodge);
-            BrushOpacityLabel.Text = t == Tool.Dodge ? "Esposizione:" : "Opacità:";
+            BrushOpacityLabel.Text = t == Tool.Dodge ? T("Esposizione:") : T("Opacità:");
             Show(OptSelect, t is Tool.RectSelect or Tool.EllipseSelect or Tool.Lasso or Tool.Wand);
             Show(OptTolerance, t is Tool.Wand or Tool.Bucket);
             Show(SampleAll, t == Tool.Wand);
@@ -74,18 +75,18 @@ namespace PhotoStudio
             Show(OptZoom, t is Tool.Zoom or Tool.Hand);
             OptHint.Text = t switch
             {
-                Tool.Move => "Trascina per spostare il livello attivo (o i pixel selezionati)",
-                Tool.RectSelect or Tool.EllipseSelect or Tool.Lasso or Tool.Wand => "Maiusc: aggiungi · Alt: sottrai",
-                Tool.Crop => "Trascina l'area, poi Invio o doppio clic per applicare",
-                Tool.Eyedropper => "Clic: primo piano · Alt+clic: sfondo",
-                Tool.Brush => "Alt+clic: preleva colore · Maiusc+clic: linea retta · [ ]: dimensione",
-                Tool.Clone => "Alt+clic per definire l'origine",
-                Tool.Eraser => "Maiusc+clic: linea retta",
-                Tool.Gradient => "Trascina per tracciare · Maiusc: angoli di 45°",
-                Tool.Text => "Clic sull'immagine per inserire il testo",
-                Tool.Shape => "Trascina per disegnare · Maiusc: proporzioni vincolate",
-                Tool.Hand => "Trascina per scorrere (oppure tieni premuto Spazio)",
-                Tool.Zoom => "Clic: zoom avanti · Alt+clic: zoom indietro",
+                Tool.Move => T("Trascina per spostare il livello attivo (o i pixel selezionati)"),
+                Tool.RectSelect or Tool.EllipseSelect or Tool.Lasso or Tool.Wand => T("Maiusc: aggiungi · Alt: sottrai"),
+                Tool.Crop => T("Trascina l'area, poi Invio o doppio clic per applicare"),
+                Tool.Eyedropper => T("Clic: primo piano · Alt+clic: sfondo"),
+                Tool.Brush => T("Alt+clic: preleva colore · Maiusc+clic: linea retta · [ ]: dimensione"),
+                Tool.Clone => T("Alt+clic per definire l'origine"),
+                Tool.Eraser => T("Maiusc+clic: linea retta"),
+                Tool.Gradient => T("Trascina per tracciare · Maiusc: angoli di 45°"),
+                Tool.Text => T("Clic sull'immagine per inserire il testo"),
+                Tool.Shape => T("Trascina per disegnare · Maiusc: proporzioni vincolate"),
+                Tool.Hand => T("Trascina per scorrere (oppure tieni premuto Spazio)"),
+                Tool.Zoom => T("Clic: zoom avanti · Alt+clic: zoom indietro"),
                 _ => "",
             };
             CloneMarker.Visibility = Visibility.Collapsed;
@@ -378,7 +379,7 @@ namespace PhotoStudio
                     break;
                 case Tool.Crop:
                     if (_cropRect is Rect cr && (cr.Width < 2 || cr.Height < 2)) CancelCrop();
-                    else if (_cropRect != null) Status("Premi Invio (o doppio clic) per ritagliare, Esc per annullare.");
+                    else if (_cropRect != null) Status(T("Premi Invio (o doppio clic) per ritagliare, Esc per annullare."));
                     break;
                 case Tool.Gradient:
                     ClearPreview();
@@ -484,10 +485,10 @@ namespace PhotoStudio
 
         string StrokeName() => _tool switch
         {
-            Tool.Eraser => "Gomma",
-            Tool.Clone => "Timbro clone",
-            Tool.Dodge => DodgeMode.SelectedIndex == 1 ? "Brucia" : "Scherma",
-            _ => "Pennello",
+            Tool.Eraser => T("Gomma"),
+            Tool.Clone => T("Timbro clone"),
+            Tool.Dodge => DodgeMode.SelectedIndex == 1 ? T("Brucia") : T("Scherma"),
+            _ => T("Pennello"),
         };
 
         bool BeginStroke(Point p, bool alt, bool shift)
@@ -500,11 +501,11 @@ namespace PhotoStudio
                 _cloneSource = p;
                 _cloneOffset = null;
                 ShowCloneMarker(p);
-                Status("Origine del timbro clone impostata.");
+                Status(T("Origine del timbro clone impostata."));
                 return false;
             }
-            if (!layer.Visible) { Status("Il livello attivo è nascosto: rendilo visibile per modificarlo."); return false; }
-            if (_tool == Tool.Clone && _cloneSource == null) { Status("Tieni premuto Alt e fai clic per definire l'origine del timbro clone."); return false; }
+            if (!layer.Visible) { Status(T("Il livello attivo è nascosto: rendilo visibile per modificarlo.")); return false; }
+            if (_tool == Tool.Clone && _cloneSource == null) { Status(T("Tieni premuto Alt e fai clic per definire l'origine del timbro clone.")); return false; }
 
             _stroke = new StrokeEngine(layer, S.Selection)
             {
@@ -597,7 +598,7 @@ namespace PhotoStudio
             {
                 if (_moveFloat != null && S.Selection != null) S.Selection = S.Selection.Translated(_moveDx, _moveDy);
                 UpdateSelectionVisual();
-                Commit("Sposta");
+                Commit(T("Sposta"));
             }
             _moveLayer = null;
             _moveBase = _moveFloat = _moveHole = _moveShift = null;
@@ -611,7 +612,7 @@ namespace PhotoStudio
                 if (cur != null) sel = cur.Combine(sel, op);
                 else if (op != SelectionOp.Add) return;
             }
-            SetSelection(sel.IsEmpty ? null : sel, "Selezione");
+            SetSelection(sel.IsEmpty ? null : sel, T("Selezione"));
         }
 
         void SetSelection(Selection sel, string historyName)
@@ -624,7 +625,7 @@ namespace PhotoStudio
         void Deselect()
         {
             if (S?.Selection == null) return;
-            SetSelection(null, "Deseleziona");
+            SetSelection(null, T("Deseleziona"));
         }
 
         void WandSelect(Point p, SelectionOp op)
@@ -672,7 +673,7 @@ namespace PhotoStudio
             var ir = new Int32Rect((int)Math.Round(r.X), (int)Math.Round(r.Y),
                 Math.Max(1, (int)Math.Round(r.Width)), Math.Max(1, (int)Math.Round(r.Height)));
             CancelCrop();
-            CropTo(ir, "Ritaglia");
+            CropTo(ir, T("Ritaglia"));
         }
 
         void BucketFill(Point p)
@@ -686,7 +687,7 @@ namespace PhotoStudio
             if (!ImageOps.IsEmpty(r))
             {
                 Recomposite(r);
-                Commit("Secchiello");
+                Commit(T("Secchiello"));
             }
         }
 
@@ -698,7 +699,7 @@ namespace PhotoStudio
             using (Busy())
                 Painting.Gradient(layer, _dragStart, end, _primary, c1, GradientType.SelectedIndex == 1, FillOpacity.Value / 100, S.Selection);
             Recomposite();
-            Commit("Sfumatura");
+            Commit(TC("strumento", "Sfumatura"));
         }
 
         Geometry MakeShapeGeometry(Point a, Point b, bool constrain)
@@ -739,9 +740,9 @@ namespace PhotoStudio
             var pen = stroke ? new Pen(brush, ShapeStroke.Value) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round } : null;
             var bounds = stroke ? g.GetRenderBounds(pen) : g.Bounds;
             if (bounds.IsEmpty) return;
-            var layer = new Layer(NextLayerName("Forma"), Doc.Width, Doc.Height);
+            var layer = new Layer(NextLayerName(T("Forma")), Doc.Width, Doc.Height);
             Painting.RenderDrawing(layer, bounds, dc => dc.DrawGeometry(stroke ? null : brush, pen, g), null);
-            InsertLayer(layer, "Forma");
+            InsertLayer(layer, T("Forma"));
         }
 
         void PlaceText(Point p)
@@ -763,7 +764,7 @@ namespace PhotoStudio
             if (name.Length > 24) name = name.Substring(0, 24) + "…";
             var layer = new Layer(name, Doc.Width, Doc.Height);
             Painting.RenderDrawing(layer, bounds, dc => dc.DrawText(ft, p), null);
-            InsertLayer(layer, "Testo");
+            InsertLayer(layer, T("Testo"));
         }
     }
 }

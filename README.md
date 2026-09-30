@@ -24,7 +24,7 @@
 </p>
 
 > [!NOTE]
-> The interface is currently in Italian. English, German, French and Spanish are on the way.
+> The interface is available in English, Italian, German, French and Spanish: PhotoStudio uses the Windows language, and you can change it in *View ▸ Language*.
 
 ## Features
 
@@ -113,6 +113,8 @@ To publish a new version: update the code, then `git tag v1.0.1` and `git push o
 ## Contributing
 
 Bug reports, ideas and pull requests are welcome in [Issues](../../issues).
+
+**Translations** live in [`Localization/`](Localization/): one JSON file per language, mapping the Italian text used in the code to its translation. To fix a translation, edit the value; to add a language, copy `en.json`, translate the values and add the language to `Loc.Languages` in [`Core/Loc.cs`](Core/Loc.cs). A missing entry simply shows the Italian text.
 
 ## License
 

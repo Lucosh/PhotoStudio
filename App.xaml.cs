@@ -1,10 +1,14 @@
 using System.Windows;
 using System.Windows.Threading;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio
 {
     public partial class App : Application
     {
+        // Before anything else, so that every text (including static tables) is created in the chosen language.
+        public App() => Core.Loc.Init();
+
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
@@ -25,7 +29,7 @@ namespace PhotoStudio
 
         void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            MessageBox.Show("Si è verificato un errore imprevisto:\n\n" + e.Exception.Message,
+            MessageBox.Show(T("Si è verificato un errore imprevisto:\n\n{0}", e.Exception.Message),
                 "PhotoStudio", MessageBoxButton.OK, MessageBoxImage.Error);
             e.Handled = true;
         }

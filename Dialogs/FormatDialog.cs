@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using PhotoStudio.Core;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio.Dialogs
 {
@@ -16,11 +17,11 @@ namespace PhotoStudio.Dialogs
 
         readonly List<(string Ext, CheckBox Box)> _boxes = new List<(string, CheckBox)>();
 
-        public FormatDialog(Window owner, IDictionary<string, int> counts) : base(owner, "Formati da selezionare")
+        public FormatDialog(Window owner, IDictionary<string, int> counts) : base(owner, T("Formati da selezionare"))
         {
             Body.Children.Add(new TextBlock
             {
-                Text = "Le foto sono in più formati. Quali vuoi selezionare e modificare?",
+                Text = T("Le foto sono in più formati. Quali vuoi selezionare e modificare?"),
                 Margin = new Thickness(0, 0, 0, 12),
             });
 
@@ -29,15 +30,15 @@ namespace PhotoStudio.Dialogs
             var others = counts.Keys.Where(e => !RawImage.IsRawFile(e)).ToList();
 
             if (raws.Count > 0) AddGroup("Camera RAW", raws, counts, useLast);
-            if (others.Count > 0) AddGroup("Immagini", others, counts, useLast);
+            if (others.Count > 0) AddGroup(T("Immagini"), others, counts, useLast);
 
             var quick = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 4) };
             if (raws.Count > 0 && others.Count > 0)
             {
-                quick.Children.Add(QuickButton("Solo RAW", e => RawImage.IsRawFile(e)));
-                quick.Children.Add(QuickButton("Solo immagini", e => !RawImage.IsRawFile(e)));
+                quick.Children.Add(QuickButton(T("Solo RAW"), e => RawImage.IsRawFile(e)));
+                quick.Children.Add(QuickButton(T("Solo immagini"), e => !RawImage.IsRawFile(e)));
             }
-            quick.Children.Add(QuickButton("Tutti", e => true));
+            quick.Children.Add(QuickButton(T("Tutti"), e => true));
             Body.Children.Add(quick);
         }
 
@@ -78,7 +79,7 @@ namespace PhotoStudio.Dialogs
             Extensions = new HashSet<string>(_boxes.Where(b => b.Box.IsChecked == true).Select(b => b.Ext), StringComparer.OrdinalIgnoreCase);
             if (Extensions.Count == 0)
             {
-                Error("Scegli almeno un formato.");
+                Error(T("Scegli almeno un formato."));
                 return;
             }
             _lastChoice = Extensions;

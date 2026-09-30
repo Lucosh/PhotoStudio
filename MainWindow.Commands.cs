@@ -9,6 +9,7 @@ using System.Windows.Media;
 using Microsoft.Win32;
 using PhotoStudio.Core;
 using PhotoStudio.Dialogs;
+using static PhotoStudio.Core.Loc;
 
 namespace PhotoStudio
 {
@@ -57,94 +58,94 @@ namespace PhotoStudio
             A("edit.fillfg", () => FillSelection(_primary));
             A("edit.fillbg", () => FillSelection(_secondary));
             A("edit.transform", TransformLayerDialog);
-            A("edit.layer180", () => TransformActiveLayer(px => ImageOps.Rotate180(px, Doc.Width, Doc.Height), "Ruota livello 180°"));
-            A("edit.layerfliph", () => TransformActiveLayer(px => ImageOps.FlipH(px, Doc.Width, Doc.Height), "Rifletti livello orizzontale"));
-            A("edit.layerflipv", () => TransformActiveLayer(px => ImageOps.FlipV(px, Doc.Width, Doc.Height), "Rifletti livello verticale"));
+            A("edit.layer180", () => TransformActiveLayer(px => ImageOps.Rotate180(px, Doc.Width, Doc.Height), T("Ruota livello 180°")));
+            A("edit.layerfliph", () => TransformActiveLayer(px => ImageOps.FlipH(px, Doc.Width, Doc.Height), T("Rifletti livello orizzontale")));
+            A("edit.layerflipv", () => TransformActiveLayer(px => ImageOps.FlipV(px, Doc.Width, Doc.Height), T("Rifletti livello verticale")));
 
             // ---- Adjustments
-            A("adj.brightness", () => RunFilter("Luminosità/Contrasto",
-                new[] { new ParamSpec("Luminosità", -100, 100, 0), new ParamSpec("Contrasto", -100, 100, 0) },
+            A("adj.brightness", () => RunFilter(T("Luminosità/Contrasto"),
+                new[] { new ParamSpec(T("Luminosità"), -100, 100, 0), new ParamSpec(T("Contrasto"), -100, 100, 0) },
                 (s, w, h, v) => Adjustments.BrightnessContrast(s, v[0], v[1])));
-            A("adj.levels", () => RunFilter("Livelli",
+            A("adj.levels", () => RunFilter(T("Livelli"),
                 new[]
                 {
-                    new ParamSpec("Input nero", 0, 253, 0), new ParamSpec("Input bianco", 2, 255, 255),
-                    new ParamSpec("Gamma (mezzitoni)", 0.1, 9.99, 1, 2),
-                    new ParamSpec("Output nero", 0, 255, 0), new ParamSpec("Output bianco", 0, 255, 255),
+                    new ParamSpec(T("Input nero"), 0, 253, 0), new ParamSpec(T("Input bianco"), 2, 255, 255),
+                    new ParamSpec(T("Gamma (mezzitoni)"), 0.1, 9.99, 1, 2),
+                    new ParamSpec(T("Output nero"), 0, 255, 0), new ParamSpec(T("Output bianco"), 0, 255, 255),
                 },
                 (s, w, h, v) => Adjustments.Levels(s, v[0], Math.Max(v[0] + 2, v[1]), v[2], v[3], v[4])));
             A("adj.curves", RunCurves);
-            A("adj.exposure", () => RunFilter("Esposizione",
-                new[] { new ParamSpec("Esposizione (EV)", -5, 5, 0, 2), new ParamSpec("Scostamento", -0.5, 0.5, 0, 3), new ParamSpec("Correzione gamma", 0.1, 3, 1, 2) },
+            A("adj.exposure", () => RunFilter(T("Esposizione"),
+                new[] { new ParamSpec(T("Esposizione (EV)"), -5, 5, 0, 2), new ParamSpec(T("Scostamento"), -0.5, 0.5, 0, 3), new ParamSpec(T("Correzione gamma"), 0.1, 3, 1, 2) },
                 (s, w, h, v) => Adjustments.Exposure(s, v[0], v[1], v[2])));
-            A("adj.vibrance", () => RunFilter("Vividezza",
-                new[] { new ParamSpec("Vividezza", -100, 100, 0), new ParamSpec("Saturazione", -100, 100, 0) },
+            A("adj.vibrance", () => RunFilter(T("Vividezza"),
+                new[] { new ParamSpec(T("Vividezza"), -100, 100, 0), new ParamSpec(T("Saturazione"), -100, 100, 0) },
                 (s, w, h, v) => Adjustments.Vibrance(s, v[0], v[1])));
-            A("adj.huesat", () => RunFilter("Tonalità/Saturazione",
-                new[] { new ParamSpec("Tonalità", -180, 180, 0), new ParamSpec("Saturazione", -100, 100, 0), new ParamSpec("Luminosità", -100, 100, 0) },
+            A("adj.huesat", () => RunFilter(T("Tonalità/Saturazione"),
+                new[] { new ParamSpec(T("Tonalità"), -180, 180, 0), new ParamSpec(T("Saturazione"), -100, 100, 0), new ParamSpec(T("Luminosità"), -100, 100, 0) },
                 (s, w, h, v) => Adjustments.HueSaturation(s, v[0], v[1], v[2])));
-            A("adj.colorbalance", () => RunFilter("Bilanciamento colore",
+            A("adj.colorbalance", () => RunFilter(T("Bilanciamento colore"),
                 new[]
                 {
-                    new ParamSpec("Ciano ↔ Rosso", -100, 100, 0), new ParamSpec("Magenta ↔ Verde", -100, 100, 0),
-                    new ParamSpec("Giallo ↔ Blu", -100, 100, 0), ParamSpec.Check("Mantieni luminosità", true),
+                    new ParamSpec(T("Ciano ↔ Rosso"), -100, 100, 0), new ParamSpec(T("Magenta ↔ Verde"), -100, 100, 0),
+                    new ParamSpec(T("Giallo ↔ Blu"), -100, 100, 0), ParamSpec.Check(T("Mantieni luminosità"), true),
                 },
                 (s, w, h, v) => Adjustments.ColorBalance(s, v[0], v[1], v[2], v[3] > 0)));
-            A("adj.temperature", () => RunFilter("Temperatura colore",
-                new[] { new ParamSpec("Temperatura", -100, 100, 0), new ParamSpec("Tinta", -100, 100, 0) },
+            A("adj.temperature", () => RunFilter(T("Temperatura colore"),
+                new[] { new ParamSpec(T("Temperatura"), -100, 100, 0), new ParamSpec(T("Tinta"), -100, 100, 0) },
                 (s, w, h, v) => Adjustments.Temperature(s, v[0], v[1])));
-            A("adj.bw", () => RunFilter("Bianco e nero",
-                new[] { new ParamSpec("Rossi %", -200, 300, 30), new ParamSpec("Verdi %", -200, 300, 59), new ParamSpec("Blu %", -200, 300, 11) },
+            A("adj.bw", () => RunFilter(T("Bianco e nero"),
+                new[] { new ParamSpec(T("Rossi %"), -200, 300, 30), new ParamSpec(T("Verdi %"), -200, 300, 59), new ParamSpec(T("Blu %"), -200, 300, 11) },
                 (s, w, h, v) => Adjustments.BlackWhite(s, v[0], v[1], v[2])));
-            A("adj.invert", () => ApplyInstant("Inverti", (s, w, h) => Adjustments.Invert(s)));
-            A("adj.posterize", () => RunFilter("Posterizza", new[] { new ParamSpec("Livelli", 2, 64, 4) },
+            A("adj.invert", () => ApplyInstant(T("Inverti"), (s, w, h) => Adjustments.Invert(s)));
+            A("adj.posterize", () => RunFilter(T("Posterizza"), new[] { new ParamSpec(T("Numero di livelli"), 2, 64, 4) },
                 (s, w, h, v) => Adjustments.Posterize(s, v[0])));
-            A("adj.threshold", () => RunFilter("Soglia", new[] { new ParamSpec("Livello soglia", 1, 255, 128) },
+            A("adj.threshold", () => RunFilter(T("Soglia"), new[] { new ParamSpec(T("Livello soglia"), 1, 255, 128) },
                 (s, w, h, v) => Adjustments.Threshold(s, v[0])));
-            A("adj.shadows", () => RunFilter("Ombre/Luci",
-                new[] { new ParamSpec("Ombre", 0, 100, 35), new ParamSpec("Luci", 0, 100, 0), new ParamSpec("Raggio", 2, 200, 30) },
+            A("adj.shadows", () => RunFilter(T("Ombre/Luci"),
+                new[] { new ParamSpec(T("Ombre"), 0, 100, 35), new ParamSpec(T("Luci"), 0, 100, 0), new ParamSpec(T("Raggio"), 2, 200, 30) },
                 (s, w, h, v) => Adjustments.ShadowsHighlights(s, w, h, v[0], v[1], v[2])));
-            A("adj.desaturate", () => ApplyInstant("Desatura", (s, w, h) => Adjustments.Desaturate(s)));
-            A("adj.sepia", () => ApplyInstant("Seppia", (s, w, h) => Adjustments.Sepia(s)));
+            A("adj.desaturate", () => ApplyInstant(T("Desatura"), (s, w, h) => Adjustments.Desaturate(s)));
+            A("adj.sepia", () => ApplyInstant(T("Seppia"), (s, w, h) => Adjustments.Sepia(s)));
             A("adj.autoenhance", AutoEnhance);
-            A("adj.autocolor", () => ApplyInstant("Colore automatico", (s, w, h) => Adjustments.AutoColor(s)));
+            A("adj.autocolor", () => ApplyInstant(T("Colore automatico"), (s, w, h) => Adjustments.AutoColor(s)));
             A("flt.cameraraw", () => CameraRawFilter(false));
             A("flt.ai", () => CameraRawFilter(true));
             A("ai.settings", () => new AiSettingsDialog(this).ShowDialog(), false);
-            A("adj.autotone", () => ApplyInstant("Tono automatico", (s, w, h) => Adjustments.AutoLevels(s, true)));
-            A("adj.autocontrast", () => ApplyInstant("Contrasto automatico", (s, w, h) => Adjustments.AutoLevels(s, false)));
+            A("adj.autotone", () => ApplyInstant(T("Tono automatico"), (s, w, h) => Adjustments.AutoLevels(s, true)));
+            A("adj.autocontrast", () => ApplyInstant(T("Contrasto automatico"), (s, w, h) => Adjustments.AutoLevels(s, false)));
 
             // ---- Filters
-            A("flt.gauss", () => RunFilter("Controllo sfocatura gaussiana", new[] { new ParamSpec("Raggio (pixel)", 0.1, 250, 2, 1) },
+            A("flt.gauss", () => RunFilter(T("Controllo sfocatura gaussiana"), new[] { new ParamSpec(T("Raggio (pixel)"), 0.1, 250, 2, 1) },
                 (s, w, h, v) => Filters.GaussianBlur(s, w, h, v[0])));
-            A("flt.motion", () => RunFilter("Sfocatura movimento", new[] { new ParamSpec("Angolo", -90, 90, 0), new ParamSpec("Distanza (pixel)", 1, 200, 15) },
+            A("flt.motion", () => RunFilter(T("Sfocatura movimento"), new[] { new ParamSpec(T("Angolo"), -90, 90, 0), new ParamSpec(T("Distanza (pixel)"), 1, 200, 15) },
                 (s, w, h, v) => Filters.MotionBlur(s, w, h, v[0], v[1])));
-            A("flt.sharpen", () => ApplyInstant("Contrasta", Filters.Sharpen));
-            A("flt.unsharp", () => RunFilter("Maschera di contrasto",
-                new[] { new ParamSpec("Fattore %", 1, 500, 100), new ParamSpec("Raggio (pixel)", 0.1, 250, 1, 1), new ParamSpec("Soglia (livelli)", 0, 255, 0) },
+            A("flt.sharpen", () => ApplyInstant(T("Contrasta"), Filters.Sharpen));
+            A("flt.unsharp", () => RunFilter(T("Maschera di contrasto"),
+                new[] { new ParamSpec(T("Fattore %"), 1, 500, 100), new ParamSpec(T("Raggio (pixel)"), 0.1, 250, 1, 1), new ParamSpec(T("Soglia (livelli)"), 0, 255, 0) },
                 (s, w, h, v) => Filters.UnsharpMask(s, w, h, v[0], v[1], v[2])));
-            A("flt.clarity", () => RunFilter("Chiarezza", new[] { new ParamSpec("Quantità", -100, 100, 35) },
+            A("flt.clarity", () => RunFilter(T("Chiarezza"), new[] { new ParamSpec(T("Quantità"), -100, 100, 35) },
                 (s, w, h, v) => Filters.Clarity(s, w, h, v[0])));
-            A("flt.noise", () => RunFilter("Aggiungi disturbo", new[] { new ParamSpec("Quantità %", 0, 100, 10, 1), ParamSpec.Check("Monocromatico", false) },
+            A("flt.noise", () => RunFilter(T("Aggiungi disturbo"), new[] { new ParamSpec(T("Quantità %"), 0, 100, 10, 1), ParamSpec.Check(T("Monocromatico"), false) },
                 (s, w, h, v) => Filters.AddNoise(s, w, h, v[0], v[1] > 0)));
-            A("flt.pixelate", () => RunFilter("Mosaico", new[] { new ParamSpec("Dimensione cella", 2, 200, 12) },
+            A("flt.pixelate", () => RunFilter(T("Mosaico"), new[] { new ParamSpec(T("Dimensione cella"), 2, 200, 12) },
                 (s, w, h, v) => Filters.Pixelate(s, w, h, (int)v[0])));
-            A("flt.edges", () => ApplyInstant("Trova bordi", Filters.FindEdges));
-            A("flt.emboss", () => RunFilter("Rilievo", new[] { new ParamSpec("Fattore %", 10, 500, 100) },
+            A("flt.edges", () => ApplyInstant(T("Trova bordi"), Filters.FindEdges));
+            A("flt.emboss", () => RunFilter(T("Rilievo"), new[] { new ParamSpec(T("Fattore %"), 10, 500, 100) },
                 (s, w, h, v) => Filters.Emboss(s, w, h, v[0])));
-            A("flt.vignette", () => RunFilter("Vignettatura",
-                new[] { new ParamSpec("Quantità", -100, 100, -50), new ParamSpec("Dimensione", 0, 100, 50), new ParamSpec("Sfumatura", 1, 100, 50) },
+            A("flt.vignette", () => RunFilter(T("Vignettatura"),
+                new[] { new ParamSpec(T("Quantità"), -100, 100, -50), new ParamSpec(T("Dimensione"), 0, 100, 50), new ParamSpec(T("Sfumatura"), 1, 100, 50) },
                 (s, w, h, v) => Filters.Vignette(s, w, h, v[0], v[1], v[2])));
 
             // ---- Image
             A("img.resize", ResizeImage);
             A("img.canvas", CanvasSize);
-            A("img.rot180", () => TransformImage(px => ImageOps.Rotate180(px, Doc.Width, Doc.Height), Doc.Width, Doc.Height, "Ruota immagine 180°"));
-            A("img.rotcw", () => TransformImage(px => ImageOps.Rotate90(px, Doc.Width, Doc.Height, true), Doc.Height, Doc.Width, "Ruota immagine 90° orario"));
-            A("img.rotccw", () => TransformImage(px => ImageOps.Rotate90(px, Doc.Width, Doc.Height, false), Doc.Height, Doc.Width, "Ruota immagine 90° antiorario"));
-            A("img.fliph", () => TransformImage(px => ImageOps.FlipH(px, Doc.Width, Doc.Height), Doc.Width, Doc.Height, "Rifletti quadro orizzontale"));
-            A("img.flipv", () => TransformImage(px => ImageOps.FlipV(px, Doc.Width, Doc.Height), Doc.Width, Doc.Height, "Rifletti quadro verticale"));
-            A("img.cropsel", () => { if (S.Selection != null) CropTo(S.Selection.Bounds, "Ritaglia"); });
+            A("img.rot180", () => TransformImage(px => ImageOps.Rotate180(px, Doc.Width, Doc.Height), Doc.Width, Doc.Height, T("Ruota immagine 180°")));
+            A("img.rotcw", () => TransformImage(px => ImageOps.Rotate90(px, Doc.Width, Doc.Height, true), Doc.Height, Doc.Width, T("Ruota immagine 90° orario")));
+            A("img.rotccw", () => TransformImage(px => ImageOps.Rotate90(px, Doc.Width, Doc.Height, false), Doc.Height, Doc.Width, T("Ruota immagine 90° antiorario")));
+            A("img.fliph", () => TransformImage(px => ImageOps.FlipH(px, Doc.Width, Doc.Height), Doc.Width, Doc.Height, T("Rifletti quadro orizzontale")));
+            A("img.flipv", () => TransformImage(px => ImageOps.FlipV(px, Doc.Width, Doc.Height), Doc.Width, Doc.Height, T("Rifletti quadro verticale")));
+            A("img.cropsel", () => { if (S.Selection != null) CropTo(S.Selection.Bounds, T("Ritaglia")); });
 
             // ---- Layers
             A("layer.new", NewLayer);
@@ -158,9 +159,9 @@ namespace PhotoStudio
             A("layer.flatten", Flatten);
 
             // ---- Selection
-            A("sel.all", () => SetSelection(Selection.All(Doc.Width, Doc.Height), "Seleziona tutto"));
+            A("sel.all", () => SetSelection(Selection.All(Doc.Width, Doc.Height), T("Seleziona tutto")));
             A("sel.none", Deselect);
-            A("sel.invert", () => SetSelection(S.Selection == null ? Selection.All(Doc.Width, Doc.Height) : NullIfEmpty(S.Selection.Inverted()), "Inversa"));
+            A("sel.invert", () => SetSelection(S.Selection == null ? Selection.All(Doc.Width, Doc.Height) : NullIfEmpty(S.Selection.Inverted()), T("Inversa")));
             A("sel.feather", FeatherSelection);
 
             // ---- View / crop / help
@@ -314,15 +315,15 @@ namespace PhotoStudio
                 _ => null,
             };
             var doc = Document.CreateBlank(dlg.PixelWidth, dlg.PixelHeight, bg);
-            if (bg == null) doc.Layers[0].Name = "Livello 1";
-            var s = new Session(doc, $"Senza titolo-{_untitled++}");
-            s.History.Push("Nuovo", doc.Snapshot(0, null));
+            if (bg == null) doc.Layers[0].Name = T("Livello 1");
+            var s = new Session(doc, T("Senza titolo-{0}", _untitled++));
+            s.History.Push(T("Nuovo"), doc.Snapshot(0, null));
             AddSession(s);
         }
 
         void OpenDialog()
         {
-            var dlg = new OpenFileDialog { Filter = ImageIO.OpenFilter, Multiselect = true, Title = "Apri" };
+            var dlg = new OpenFileDialog { Filter = ImageIO.OpenFilter, Multiselect = true, Title = T("Apri") };
             if (dlg.ShowDialog(this) != true) return;
             // More photos: browse them like a folder (Preselezione). Projects and a single photo open directly.
             var photos = dlg.FileNames.Where(f => PhotoLibrary.IsSupported(f)).ToList();
@@ -357,36 +358,36 @@ namespace PhotoStudio
                             (w, h, px) = (developed.Width, developed.Height, developed.Pixels);
                         }
                         doc = new Document(w, h);
-                        doc.Layers.Add(new Layer("Sfondo", w, h, px));
+                        doc.Layers.Add(new Layer(T("Sfondo"), w, h, px));
                     }
                     foreach (var l in doc.Layers) l.UpdateThumbnail();
                 }
                 var s = new Session(doc, Path.GetFileName(path)) { FilePath = path, SourcePath = path };
-                s.History.Push("Apri", doc.Snapshot(0, null));
+                s.History.Push(T("Apri"), doc.Snapshot(0, null));
                 if (!project) MarkDeveloped(s, settings);
                 AddSession(s);
-                Status("Aperto: " + path);
+                Status(T("Aperto: {0}", path));
                 return s;
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, $"Impossibile aprire il file:\n{path}\n\n{ex.Message}", "PhotoStudio", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, T("Impossibile aprire il file:\n{0}\n\n{1}", path, ex.Message), "PhotoStudio", MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
         }
 
         void PlaceFile()
         {
-            var dlg = new OpenFileDialog { Filter = ImageIO.OpenFilter, Title = "Inserisci come livello" };
+            var dlg = new OpenFileDialog { Filter = ImageIO.OpenFilter, Title = T("Inserisci come livello") };
             if (dlg.ShowDialog(this) != true) return;
             try
             {
                 var (w, h, px) = ImageIO.LoadBitmap(dlg.FileName);
-                PlaceImage(w, h, px, Path.GetFileNameWithoutExtension(dlg.FileName), "Inserisci", true);
+                PlaceImage(w, h, px, Path.GetFileNameWithoutExtension(dlg.FileName), T("Inserisci"), true);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Impossibile inserire il file:\n" + ex.Message, "PhotoStudio", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, T("Impossibile inserire il file:\n{0}", ex.Message), "PhotoStudio", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -415,8 +416,8 @@ namespace PhotoStudio
             if (!saveAs && path != null && !isProject && Doc.Layers.Count > 1)
             {
                 var r = MessageBox.Show(this,
-                    "Il documento contiene più livelli.\n\nSì: salva un'immagine appiattita nel file originale\nNo: scegli un altro formato (es. progetto .psx che conserva i livelli)",
-                    "Salva", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+                    T("Il documento contiene più livelli.\n\nSì: salva un'immagine appiattita nel file originale\nNo: scegli un altro formato (es. progetto .psx che conserva i livelli)"),
+                    T("Salva"), MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
                 if (r == MessageBoxResult.Cancel) return false;
                 if (r == MessageBoxResult.No) saveAs = true;
             }
@@ -425,7 +426,7 @@ namespace PhotoStudio
                 var dlg = new SaveFileDialog
                 {
                     Filter = ImageIO.SaveFilter,
-                    Title = "Salva con nome",
+                    Title = T("Salva con nome"),
                     AddExtension = true,
                     FileName = Path.GetFileNameWithoutExtension(S.Title),
                     FilterIndex = Doc.Layers.Count > 1 ? 1 : 2,
@@ -440,7 +441,7 @@ namespace PhotoStudio
             S.Title = Path.GetFileName(path);
             S.Modified = false;
             UpdateTitle();
-            Status("Salvato: " + path);
+            Status(T("Salvato: {0}", path));
             return true;
         }
 
@@ -449,17 +450,17 @@ namespace PhotoStudio
             var dlg = new SaveFileDialog
             {
                 Filter = "PNG (*.png)|*.png|JPEG (*.jpg)|*.jpg|TIFF (*.tif)|*.tif|BMP (*.bmp)|*.bmp",
-                Title = "Esporta",
+                Title = T("Esporta"),
                 FileName = Path.GetFileNameWithoutExtension(S.Title),
             };
             if (dlg.ShowDialog(this) != true) return;
             if (ImageIO.IsJpeg(dlg.FileName) && !AskJpegQuality()) return;
-            if (WriteFile(dlg.FileName)) Status("Esportato: " + dlg.FileName);
+            if (WriteFile(dlg.FileName)) Status(T("Esportato: {0}", dlg.FileName));
         }
 
         bool AskJpegQuality()
         {
-            var d = new ParamDialog(this, "Opzioni JPEG", new[] { new ParamSpec("Qualità", 1, 100, S.JpegQuality) }, null);
+            var d = new ParamDialog(this, T("Opzioni JPEG"), new[] { new ParamSpec(T("Qualità"), 1, 100, S.JpegQuality) }, null);
             if (d.ShowDialog() != true) return false;
             S.JpegQuality = (int)d.Values[0];
             return true;
@@ -478,7 +479,7 @@ namespace PhotoStudio
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, $"Impossibile salvare il file:\n{path}\n\n{ex.Message}", "PhotoStudio", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, T("Impossibile salvare il file:\n{0}\n\n{1}", path, ex.Message), "PhotoStudio", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
         }
@@ -488,45 +489,15 @@ namespace PhotoStudio
         void ShowShortcuts()
         {
             MessageBox.Show(this,
-                "STRUMENTI\n" +
-                "V Sposta · M Selezione (rett./ellittica) · L Lazo · W Bacchetta magica\n" +
-                "C Taglierina · I Contagocce · B Pennello · S Timbro clone · E Gomma\n" +
-                "G Secchiello / Sfumatura · O Scherma/Brucia · T Testo · U Forme · H Mano · Z Zoom\n" +
-                "[ ] (oppure , .) dimensione pennello · X inverti colori · D colori predefiniti\n" +
-                "Spazio + trascina: scorri · Alt+rotellina o Ctrl+rotellina: zoom\n\n" +
-                "MODIFICA\n" +
-                "Ctrl+Z annulla · Shift+Ctrl+Z / Ctrl+Y ripeti · Ctrl+X/C/V taglia/copia/incolla\n" +
-                "Canc cancella selezione · Alt+Backspace riempi primo piano · Ctrl+Backspace riempi sfondo\n" +
-                "Ctrl+T trasforma livello\n\n" +
-                "REGOLAZIONI\n" +
-                "Ctrl+L Livelli · Ctrl+M Curve · Ctrl+U Tonalità/Saturazione · Ctrl+B Bilanciamento colore\n" +
-                "Ctrl+I Inverti · Shift+Ctrl+U Desatura · Shift+Ctrl+L Tono automatico\n" +
-                "Shift+Ctrl+B Colore automatico · Alt+Shift+Ctrl+L Contrasto automatico\n" +
-                "Alt+Shift+Ctrl+A Miglioramento automatico · Shift+Ctrl+A Filtro Camera Raw (Ctrl+U Automatico, Ctrl+Maiusc+U bil. bianco) · Shift+Ctrl+K Modifica con AI\n" +
-                "Alt+Ctrl+L Luce intelligente · Alt+Ctrl+M Maschere di luce · in Camera Raw: Y confronto Prima/Dopo\n\n" +
-                "PRESELEZIONE\n" +
-                "Alt+Ctrl+O scegli la cartella · ← → scorri · Canc sposta nel Cestino · Ctrl+Z ripristina · Z zoom 100% · Invio fine\n" +
-                "0-5 stelle · 6-9 etichetta (rosso, giallo, verde, blu) · C confronta 2/4 foto · B confronta la raffica\n" +
-                "Ctrl+← → raffica precedente/successiva · H istogramma · J luci bruciate e ombre chiuse\n\n" +
-                "CARTELLA DI MODIFICA\n" +
-                "Ctrl+Invio salva la foto nella cartella scelta e passa alla successiva\n" +
-                "Alt+Maiusc+C copia le impostazioni di sviluppo · Alt+Maiusc+V applicale ad altre foto (o un preset)\n\n" +
-                "LIVELLI E SELEZIONE\n" +
-                "Shift+Ctrl+N nuovo · Ctrl+J duplica · Ctrl+E unisci sotto · Ctrl+[ ] ordine\n" +
-                "Ctrl+A tutto · Ctrl+D deseleziona · Shift+Ctrl+I inversa · Shift+F6 sfuma\n\n" +
-                "VISUALIZZA\n" +
-                "Ctrl++ / Ctrl+- zoom · Ctrl+0 adatta · Ctrl+1 100%",
-                "Scorciatoie da tastiera", MessageBoxButton.OK, MessageBoxImage.Information);
+                T("STRUMENTI\nV Sposta · M Selezione (rett./ellittica) · L Lazo · W Bacchetta magica\nC Taglierina · I Contagocce · B Pennello · S Timbro clone · E Gomma\nG Secchiello / Sfumatura · O Scherma/Brucia · T Testo · U Forme · H Mano · Z Zoom\n[ ] (oppure , .) dimensione pennello · X inverti colori · D colori predefiniti\nSpazio + trascina: scorri · Alt+rotellina o Ctrl+rotellina: zoom\n\nMODIFICA\nCtrl+Z annulla · Shift+Ctrl+Z / Ctrl+Y ripeti · Ctrl+X/C/V taglia/copia/incolla\nCanc cancella selezione · Alt+Backspace riempi primo piano · Ctrl+Backspace riempi sfondo\nCtrl+T trasforma livello\n\nREGOLAZIONI\nCtrl+L Livelli · Ctrl+M Curve · Ctrl+U Tonalità/Saturazione · Ctrl+B Bilanciamento colore\nCtrl+I Inverti · Shift+Ctrl+U Desatura · Shift+Ctrl+L Tono automatico\nShift+Ctrl+B Colore automatico · Alt+Shift+Ctrl+L Contrasto automatico\nAlt+Shift+Ctrl+A Miglioramento automatico · Shift+Ctrl+A Filtro Camera Raw (Ctrl+U Automatico, Ctrl+Maiusc+U bil. bianco) · Shift+Ctrl+K Modifica con AI\nAlt+Ctrl+L Luce intelligente · Alt+Ctrl+M Maschere di luce · in Camera Raw: Y confronto Prima/Dopo\n\nPRESELEZIONE\nAlt+Ctrl+O scegli la cartella · ← → scorri · Canc sposta nel Cestino · Ctrl+Z ripristina · Z zoom 100% · Invio fine\n0-5 stelle · 6-9 etichetta (rosso, giallo, verde, blu) · C confronta 2/4 foto · B confronta la raffica\nCtrl+← → raffica precedente/successiva · H istogramma · J luci bruciate e ombre chiuse\n\nCARTELLA DI MODIFICA\nCtrl+Invio salva la foto nella cartella scelta e passa alla successiva\nAlt+Maiusc+C copia le impostazioni di sviluppo · Alt+Maiusc+V applicale ad altre foto (o un preset)\n\nLIVELLI E SELEZIONE\nShift+Ctrl+N nuovo · Ctrl+J duplica · Ctrl+E unisci sotto · Ctrl+[ ] ordine\nCtrl+A tutto · Ctrl+D deseleziona · Shift+Ctrl+I inversa · Shift+F6 sfuma\n\nVISUALIZZA\nCtrl++ / Ctrl+- zoom · Ctrl+0 adatta · Ctrl+1 100%"),
+                T("Scorciatoie da tastiera"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         void ShowAbout()
         {
             MessageBox.Show(this,
-                "PhotoStudio 1.0\n\nEditor di immagini a livelli per Windows.\n" +
-                "Formati: PNG, JPEG, BMP, TIFF, GIF, WebP/HEIC (se i codec sono installati)\n" +
-                "Camera RAW (CR2, CR3, NEF, ARW, DNG, RAF, ORF, RW2...) tramite LibRaw\n" +
-                "e progetto .psx con livelli.",
-                "Informazioni su PhotoStudio", MessageBoxButton.OK, MessageBoxImage.Information);
+                T("PhotoStudio 1.0\n\nEditor di immagini a livelli per Windows.\nFormati: PNG, JPEG, BMP, TIFF, GIF, WebP/HEIC (se i codec sono installati)\nCamera RAW (CR2, CR3, NEF, ARW, DNG, RAF, ORF, RW2...) tramite LibRaw\ne progetto .psx con livelli."),
+                T("Informazioni su PhotoStudio"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }
