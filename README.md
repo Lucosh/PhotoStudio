@@ -52,7 +52,7 @@ Sort a whole shoot, develop your RAW files and retouch them, with optional AI he
 
 ### ☀️ Smart light, made easy
 
-- **Smart light**: one click fixes the exposure, then adds light masks only where the photo needs them (dark areas, bright areas, sky, subject).
+- **Smart light**: one click fixes the exposure, then adds light masks only where the photo needs them (dark areas, bright areas, sky, faces or subject). It finds the sky and the faces in the photo (on your PC, nothing is uploaded), keeps night shots dark, and can give a whole series of shots the same correction.
 - **Easy light masks**: a simplified panel for beginners, with ready-made recipes and no technical sliders.
 
 ### ✨ AI-assisted editing (optional)

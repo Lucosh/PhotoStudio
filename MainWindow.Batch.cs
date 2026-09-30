@@ -485,7 +485,7 @@ namespace PhotoStudio
 
             if (!EnsureOutputFolder(out var dir)) return;
             var result = await ProcessPhotos(targets, T("Sviluppo e salvataggio"), dir, true,
-                (src, item) => Merged(item),
+                (source, item) => Merged(item),
                 session => ApplySettingsToSession(session, dlg.Settings, dlg.Groups, quiet: true));
             ReportProcessed(result, dir, true, T("Applica impostazioni"));
         }
@@ -502,8 +502,12 @@ namespace PhotoStudio
         /// saveNow: also writes it to the output folder; otherwise the settings become its starting point.
         /// Photos open in a tab go through applyToOpen (on the UI thread), and only if they have no other edits.
         /// </summary>
+        /// <param name="settingsFor">
+        /// The settings of a photo; its first argument loads the original, and is called only by those who need to
+        /// look at the photo to decide.
+        /// </param>
         async Task<ProcessResult> ProcessPhotos(List<PhotoItem> targets, string title, string dir, bool saveNow,
-                                                Func<RawImage, PhotoItem, RawSettings> settingsFor, Func<Session, bool> applyToOpen)
+                                                Func<Func<RawImage>, PhotoItem, RawSettings> settingsFor, Func<Session, bool> applyToOpen)
         {
             var r = new ProcessResult();
             var progress = new ProgressWindow(this, title, targets.Count);
@@ -528,10 +532,11 @@ namespace PhotoStudio
                     {
                         var (settings, w, h, px) = await Task.Run(() =>
                         {
-                            var src = LoadSourceLinear(item.EditPath);
-                            var st = settingsFor(src, item);
+                            RawImage src = null;
+                            RawImage Source() => src ??= LoadSourceLinear(item.EditPath);
+                            var st = settingsFor(Source, item);
                             if (!saveNow) return (st, 0, 0, (byte[])null);
-                            var d = RawDevelop.Develop(src, st);
+                            var d = RawDevelop.Develop(Source(), st);
                             return (st, d.Width, d.Height, d.Pixels);
                         });
                         item.Settings = settings;
@@ -575,6 +580,11 @@ namespace PhotoStudio
         // ---------- Luce intelligente ----------
 
         double _smartIntensity = 100;
+        bool _smartSeries = true;
+        /// <summary>Photos taken at most this many seconds after the previous one, in the same light, are a series.</summary>
+        const double SeriesGap = 60;
+        /// <summary>Camera exposures (EV) further apart than this mean that the light changed.</summary>
+        const double SeriesLight = 1.5;
 
         /// <summary>Alt+Ctrl+L: fixes the light of the open photo, or of every photo of the editing folder.</summary>
         async void SmartLightCommand()
@@ -586,9 +596,10 @@ namespace PhotoStudio
                     T("Luce intelligente"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
-            var dlg = new SmartLightDialog(this, S != null, pending.Count, _smartIntensity);
+            var dlg = new SmartLightDialog(this, S != null, pending.Count, _smartIntensity, _smartSeries);
             if (dlg.ShowDialog() != true) return;
             _smartIntensity = dlg.Intensity;
+            _smartSeries = dlg.Series;
             double k = dlg.Intensity;
             if (dlg.ToOpenPhoto)
             {
@@ -603,10 +614,88 @@ namespace PhotoStudio
             }
             string dir = null;
             if (dlg.SaveNow && !EnsureOutputFolder(out dir)) return;
+            Dictionary<PhotoItem, RawSettings> plan = null;
+            if (dlg.Series && targets.Count > 1)
+            {
+                plan = await PlanSeries(targets, k);
+                if (plan == null) return;   // cancelled
+            }
             var result = await ProcessPhotos(targets, T("Luce intelligente"), dir, dlg.SaveNow,
-                (src, item) => SmartLight.Apply(src, item.Settings ?? RawSettings.Default(src.SceneReferred), k),
+                (source, item) => plan != null && plan.TryGetValue(item, out var planned)
+                    ? planned
+                    : SmartLight.Apply(source(), item.Settings ?? RawSettings.Default(source().SceneReferred), k),
                 session => SmartLightOnSession(session, k, quiet: true));
             ReportProcessed(result, dir, dlg.SaveNow, T("Luce intelligente"));
+        }
+
+        /// <summary>The exposure chosen by the camera, as EV at ISO 100 (higher = less light let in); NaN when unknown.</summary>
+        static double CameraEv(PhotoMetadata md) =>
+            md?.FNumber is double n && n > 0 && md.ExposureTime is double t && t > 0 && md.Iso is ushort iso && iso > 0
+                ? Math.Log2(n * n / t) - Math.Log2(iso / 100.0)
+                : double.NaN;
+
+        /// <summary>
+        /// "Serie coerente": Luce intelligente for a whole shoot. Every photo is analysed first (a RAW on a
+        /// half-size copy, which is much faster), then the photos taken one after the other in the same light get
+        /// the same base correction (see <see cref="SmartLight.Harmonize"/>). Null when cancelled.
+        /// Photos open in a tab are left out: they are corrected on their own.
+        /// </summary>
+        async Task<Dictionary<PhotoItem, RawSettings>> PlanSeries(List<PhotoItem> targets, double intensity)
+        {
+            var found = new List<(PhotoItem Item, RawSettings Settings, DateTime? Time, double Ev)>();
+            var progress = new ProgressWindow(this, T("Luce intelligente: analisi delle serie"), targets.Count);
+            IsEnabled = false;
+            progress.Show();
+            try
+            {
+                int done = 0;
+                foreach (var item in targets)
+                {
+                    if (progress.Cancelled) return null;
+                    progress.Report(done, T("Analisi {0} di {1}: {2}", done + 1, targets.Count, item.Name));
+                    done++;
+                    if (item.Session != null && _sessions.Contains(item.Session)) continue;
+                    try
+                    {
+                        found.Add(await Task.Run(() =>
+                        {
+                            var src = RawImage.IsRawFile(item.EditPath) ? RawImage.Load(item.EditPath, halfSize: true) : LoadSourceLinear(item.EditPath);
+                            var settings = SmartLight.Apply(src, item.Settings ?? RawSettings.Default(src.SceneReferred), intensity);
+                            var md = item.Metadata ?? PhotoLibrary.ReadMetadata(item.EditPath);
+                            return (item, settings, item.CaptureTime ?? md?.DateTaken, CameraEv(md));
+                        }));
+                    }
+                    catch { }   // left to the development that follows, which reports the error
+                }
+            }
+            finally
+            {
+                progress.Finish();
+                IsEnabled = true;
+                Activate();
+            }
+
+            var plan = new Dictionary<PhotoItem, RawSettings>();
+            var series = new List<(RawSettings Settings, double Ev)>();
+            DateTime? previous = null;
+            double firstEv = double.NaN;
+            foreach (var f in found)
+            {
+                bool sameLight = double.IsNaN(firstEv) ? double.IsNaN(f.Ev) : Math.Abs(f.Ev - firstEv) <= SeriesLight;
+                bool continues = series.Count > 0 && sameLight && f.Time is DateTime now && previous is DateTime before
+                                 && Math.Abs((now - before).TotalSeconds) <= SeriesGap;
+                if (!continues)
+                {
+                    SmartLight.Harmonize(series);
+                    series.Clear();
+                    firstEv = f.Ev;
+                }
+                series.Add((f.Settings, f.Ev));
+                previous = f.Time;
+                plan[f.Item] = f.Settings;
+            }
+            SmartLight.Harmonize(series);
+            return plan;
         }
 
         /// <summary>

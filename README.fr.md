@@ -52,7 +52,7 @@ Triez toute une séance, développez vos fichiers RAW et retouchez-les, avec l'a
 
 ### ☀️ Lumière intelligente, en toute simplicité
 
-- **Lumière intelligente** : un clic corrige l'exposition, puis ajoute des masques de lumière seulement là où la photo en a besoin (zones sombres, zones claires, ciel, sujet).
+- **Lumière intelligente** : un clic corrige l'exposition, puis ajoute des masques de lumière seulement là où la photo en a besoin (zones sombres, zones claires, ciel, visages ou sujet). Elle reconnaît le ciel et les visages dans la photo (sur votre PC, rien n'est envoyé), laisse sombres les photos de nuit et peut donner la même correction à toute une série de prises de vue.
 - **Masques de lumière faciles** : un panneau simplifié pour les débutants, avec des recettes prêtes et sans curseurs techniques.
 
 ### ✨ Retouche assistée par IA (facultative)

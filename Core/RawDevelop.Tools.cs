@@ -103,6 +103,7 @@ namespace PhotoStudio.Core
         {
             public readonly int W, H;
             readonly double _cos, _sin, _cx, _cy;
+            readonly double _left, _top, _right, _bottom;
             readonly bool _rotated;
 
             public Frame(int w, int h, RawSettings s)
@@ -112,6 +113,14 @@ namespace PhotoStudio.Core
                 _cos = Math.Cos(a); _sin = Math.Sin(a);
                 _cx = w / 2.0; _cy = h / 2.0;
                 _rotated = Math.Abs(s.Angle) >= 0.01;
+                _left = s.CropL * w; _top = s.CropT * h; _right = s.CropR * w; _bottom = s.CropB * h;
+            }
+
+            /// <summary>True when the original pixel (x, y) is part of the finished (straightened and cropped) photo.</summary>
+            public bool InCrop(int x, int y)
+            {
+                ToStraight(x, y, out double sx, out double sy);
+                return sx >= _left && sx <= _right && sy >= _top && sy <= _bottom;
             }
 
             /// <summary>Straightened pixel coordinates of the centre of original pixel (x, y).</summary>
@@ -247,7 +256,8 @@ namespace PhotoStudio.Core
                     Inner = 1 - Math.Clamp(m.Feather, 0, 1);
                 }
 
-                public float Weight(float lum, double sx, double sy)
+                /// <param name="sky">How much the pixel belongs to the sky (0 when no mask needs it).</param>
+                public float Weight(float lum, float sky, double sx, double sy)
                 {
                     float wgt;
                     switch (Kind)
@@ -256,6 +266,9 @@ namespace PhotoStudio.Core
                             float wl = Lo <= 0 ? 1 : SmoothStepF(Lo - Fe, Lo, lum);
                             float wh = Hi >= 1 ? 1 : 1 - SmoothStepF(Hi, Hi + Fe, lum);
                             wgt = wl * wh;
+                            break;
+                        case MaskKind.Sky:
+                            wgt = sky;
                             break;
                         case MaskKind.Linear:
                             double t = ((sx - Ax) * Dx + (sy - Ay) * Dy) * InvLen2;
@@ -276,20 +289,27 @@ namespace PhotoStudio.Core
             readonly float[] _lum, _blur;
             readonly Eval[] _tone, _color;
             readonly Eval _preview;
+            readonly SkyMap _sky;       // null when no mask is a sky mask, or the photo has no sky
+            readonly ushort[] _data;
             public int PreviewIndex { get; }
             public bool HasColor => _color.Length > 0;
 
-            MaskSet(Frame f, float[] lum, float[] blur, Eval[] tone, Eval[] color, Eval preview, int previewIndex)
+            MaskSet(Frame f, float[] lum, float[] blur, Eval[] tone, Eval[] color, Eval preview, int previewIndex, SkyMap sky, ushort[] data)
             {
                 _f = f; _lum = lum; _blur = blur; _tone = tone; _color = color; _preview = preview; PreviewIndex = previewIndex;
+                _sky = sky; _data = data;
             }
 
-            public static MaskSet Create(RawSettings s, float[] xt, int w, int h, Frame f, int preview)
+            float Sky(int x, int y) => _sky != null ? _sky.Weight(_data, x, y, _f.W, _f.H) : 0;
+
+            public static MaskSet Create(RawImage img, RawSettings s, float[] xt, Frame f, int preview)
             {
+                int w = f.W, h = f.H;
                 var all = s.Masks ?? new List<LocalMask>();
                 var active = all.Where(m => m != null && m.Enabled && m.Amount > 0.5).Select(m => new Eval(m, w, h)).ToArray();
                 Eval pv = preview >= 0 && preview < all.Count && all[preview] != null ? new Eval(all[preview], w, h) { Amount = 1 } : null;
                 if (active.Length == 0 && pv == null) return null;
+                var sky = active.Any(e => e.Kind == MaskKind.Sky) || pv?.Kind == MaskKind.Sky ? SceneAnalysis.Of(img).Sky : null;
 
                 float[] lum = null;
                 if (active.Any(e => e.Kind == MaskKind.Luminance) || pv?.Kind == MaskKind.Luminance)
@@ -308,7 +328,7 @@ namespace PhotoStudio.Core
                     ? BoxBlur2(xt, w, h, Math.Max(2, Math.Min(w, h) / 60))
                     : null;
                 var color = active.Where(e => e.M.HasColor).ToArray();
-                return new MaskSet(f, lum, blur, tone, color, pv, pv != null ? preview : -1);
+                return new MaskSet(f, lum, blur, tone, color, pv, pv != null ? preview : -1, sky, img.Data);
             }
 
             public void ApplyTone(float[] xt)
@@ -327,12 +347,12 @@ namespace PhotoStudio.Core
                     for (int x = 0, p = y * w; x < w; x++, p++)
                     {
                         _f.ToStraight(x, y, out double sx, out double sy);
-                        float lum = _lum != null ? _lum[p] : 0;
+                        float lum = _lum != null ? _lum[p] : 0, sky = Sky(x, y);
                         float orig = xt[p];
                         float cur = orig;
                         foreach (var t in p2)
                         {
-                            float wgt = t.E.Weight(lum, sx, sy);
+                            float wgt = t.E.Weight(lum, sky, sx, sy);
                             if (wgt < 0.002f) continue;
                             float v = cur * t.Exp;
                             if (t.C != 0)
@@ -354,10 +374,10 @@ namespace PhotoStudio.Core
             {
                 kT = kn = sat = 0;
                 _f.ToStraight(x, y, out double sx, out double sy);
-                float lum = _lum != null ? _lum[p] : 0;
+                float lum = _lum != null ? _lum[p] : 0, sky = Sky(x, y);
                 foreach (var e in _color)
                 {
-                    float wgt = e.Weight(lum, sx, sy);
+                    float wgt = e.Weight(lum, sky, sx, sy);
                     if (wgt < 0.002f) continue;
                     kT += wgt * (float)(e.M.Temperature / 100);
                     kn += wgt * (float)(e.M.Tint / 100);
@@ -369,7 +389,7 @@ namespace PhotoStudio.Core
             {
                 if (_preview == null) return 0;
                 _f.ToStraight(x, y, out double sx, out double sy);
-                return Math.Clamp(_preview.Weight(_lum != null ? _lum[p] : 0, sx, sy), 0f, 1f);
+                return Math.Clamp(_preview.Weight(_lum != null ? _lum[p] : 0, Sky(x, y), sx, sy), 0f, 1f);
             }
         }
 

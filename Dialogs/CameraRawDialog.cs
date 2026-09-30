@@ -371,14 +371,14 @@ namespace PhotoStudio.Dialogs
             var auto = new Button
             {
                 Content = FitText(T("Automatico")), Padding = new Thickness(6, 6, 6, 6), Background = Res("AccentBrush"), BorderBrush = Res("AccentBrush"),
-                ToolTip = T("Come in Camera Raw: regola Esposizione, Contrasto, Luci, Ombre, Bianchi, Neri, Vividezza e Saturazione (Ctrl+U).\nIl bilanciamento del bianco non viene toccato."),
+                ToolTip = T("Come in Camera Raw: regola Esposizione, Contrasto, Luci, Ombre, Bianchi, Neri, Vividezza e Saturazione (Ctrl+U).\nRispetta le foto scure per scelta (notturne, concerti) e pesa l'esposizione sui volti; agli alti ISO alza la riduzione del rumore.\nIl bilanciamento del bianco non viene toccato."),
             };
             auto.Click += (s, e) => RunAutoTone();
             var smart = new Button
             {
                 Content = FitText(T("☀ Luce intelligente")), Padding = new Thickness(6, 6, 6, 6), FontWeight = FontWeights.SemiBold,
                 Background = new SolidColorBrush(Color.FromRgb(0xC8, 0x8A, 0x1E)), BorderBrush = new SolidColorBrush(Color.FromRgb(0xC8, 0x8A, 0x1E)), Foreground = Brushes.White,
-                ToolTip = T("Sistema la luce in un clic: esposizione e toni come Automatico, poi maschere di luce dove servono\n(schiarisce le zone scure, recupera luci e cielo, illumina il soggetto). Tutto resta modificabile nella scheda Maschere."),
+                ToolTip = T("Sistema la luce in un clic: esposizione e toni come Automatico, poi maschere di luce dove servono\n(schiarisce le zone scure, recupera luci e cielo, illumina i volti o il soggetto). Tutto resta modificabile nella scheda Maschere."),
             };
             smart.Click += (s, e) => RunSmartLight();
             var reset = new Button { Content = FitText(T("Predefinito")), Padding = new Thickness(6, 6, 6, 6), ToolTip = T("Riporta tutti i cursori ai valori predefiniti (anche curva, colore, ritaglio e maschere)") };
@@ -853,7 +853,10 @@ namespace PhotoStudio.Dialogs
             var result = await Task.Run(() => RawDevelop.AutoTone(_preview, current));
             if (_closed) return;
             SetSettings(result);
-            _status.Text = T("Automatico: esposizione {0:+0.00;-0.00;0}, contrasto {1:+0;-0;0}, luci {2:+0;-0;0}, ombre {3:+0;-0;0}, bianchi {4:+0;-0;0}, neri {5:+0;-0;0}, vividezza {6:+0;-0;0}, saturazione {7:+0;-0;0}", result.Exposure, result.Contrast, result.Highlights, result.Shadows, result.Whites, result.Blacks, result.Vibrance, result.Saturation);
+            _status.Text = T("Automatico: esposizione {0:+0.00;-0.00;0}, contrasto {1:+0;-0;0}, luci {2:+0;-0;0}, ombre {3:+0;-0;0}, bianchi {4:+0;-0;0}, neri {5:+0;-0;0}, vividezza {6:+0;-0;0}, saturazione {7:+0;-0;0}", result.Exposure, result.Contrast, result.Highlights, result.Shadows, result.Whites, result.Blacks, result.Vibrance, result.Saturation)
+                + (result.NoiseLuma > current.NoiseLuma || result.NoiseColor > current.NoiseColor
+                    ? T(", riduzione rumore {0:0} / {1:0}", result.NoiseLuma, result.NoiseColor)
+                    : "");
         }
 
         void OnWhiteBalanceMode()

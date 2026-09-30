@@ -34,17 +34,33 @@ namespace PhotoStudio.Core
         public double Scale { get; init; } = 1;
         public string Camera { get; init; } = "";
         public string Info { get; init; } = "";
+        /// <summary>ISO, shutter time (seconds) and aperture (f-number) of the shot; 0 when unknown.</summary>
+        public double Iso { get; init; }
+        public double Shutter { get; init; }
+        public double Aperture { get; init; }
+
+        /// <summary>
+        /// How bright the scene was, as the exposure value at ISO 100 (about 15 in full sun, 12 under an overcast
+        /// sky, 5-8 indoors). NaN when the shooting data are missing.
+        /// </summary>
+        public double SceneEv => Iso > 0 && Shutter > 0 && Aperture > 0
+            ? Math.Log2(Aperture * Aperture / Shutter) - Math.Log2(Iso / 100)
+            : double.NaN;
+
+        /// <summary>What the automatic tools found in the photo (sky, faces): shared with its reduced copies.</summary>
+        internal SceneCache Scene { get; init; } = new SceneCache();
 
         public static bool IsRawFile(string path) => RawExtensions.Contains(Path.GetExtension(path) ?? "");
 
         public static string FilterPattern => string.Join(";", RawExtensions.Select(e => "*" + e));
 
         /// <summary>Decodes a camera RAW file (LibRaw, with the Windows RAW codec as fallback).</summary>
-        public static RawImage Load(string path)
+        /// <param name="halfSize">Half the width and height, several times faster: enough to analyse a photo.</param>
+        public static RawImage Load(string path, bool halfSize = false)
         {
             try
             {
-                return LoadWithLibRaw(path);
+                return LoadWithLibRaw(path, halfSize);
             }
             catch (Exception libRawError)
             {
@@ -65,12 +81,13 @@ namespace PhotoStudio.Core
             }
         }
 
-        static RawImage LoadWithLibRaw(string path)
+        static RawImage LoadWithLibRaw(string path, bool halfSize)
         {
             using var ctx = RawContext.OpenFile(path);
             ctx.Unpack();
             ctx.DcrawProcess(c =>
             {
+                c.HalfSize = halfSize;     // one pixel per 2x2 sensor cell: no demosaicing
                 c.OutputBps = 16;          // full precision
                 c.NoAutoBright = true;     // we do our own exposure
                 c.UseCameraWb = true;      // "as shot" white balance
@@ -109,9 +126,10 @@ namespace PhotoStudio.Core
 
             return new RawImage
             {
-                Width = w, Height = h, Data = data, SceneReferred = true,
+                Width = w, Height = h, Data = data, SceneReferred = true, Scale = halfSize ? 0.5 : 1,
                 Camera = $"{ip.Make} {ip.Model}".Trim(),
                 Info = string.Join(" · ", parts),
+                Iso = Math.Max(0, op.IsoSpeed), Shutter = Math.Max(0, op.Shutter), Aperture = Math.Max(0, op.Aperture),
             };
         }
 
@@ -172,6 +190,23 @@ namespace PhotoStudio.Core
             {
                 Width = nw, Height = nh, Data = d, Alpha = a, SceneReferred = SceneReferred,
                 Scale = Scale / f, Camera = Camera, Info = Info,
+                Iso = Iso, Shutter = Shutter, Aperture = Aperture, Scene = Scene,
+            };
+        }
+
+        /// <summary>
+        /// The same image where only the selected pixels are opaque: the automatic tools measure the opaque
+        /// pixels, so with this the selection alone decides the correction.
+        /// </summary>
+        /// <param name="selection">Coverage of each pixel, 0..255.</param>
+        public RawImage Within(byte[] selection)
+        {
+            var a = new byte[Width * Height];
+            for (int i = 0; i < a.Length; i++) a[i] = Alpha != null ? (byte)(Alpha[i] * selection[i] / 255) : selection[i];
+            return new RawImage
+            {
+                Width = Width, Height = Height, Data = Data, Alpha = a, SceneReferred = SceneReferred,
+                Scale = Scale, Camera = Camera, Info = Info, Iso = Iso, Shutter = Shutter, Aperture = Aperture,
             };
         }
     }

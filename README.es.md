@@ -52,7 +52,7 @@ Selecciona las mejores fotos de una sesión, revela tus archivos RAW y retócalo
 
 ### ☀️ Luz inteligente, fácil para todos
 
-- **Luz inteligente**: con un clic corrige la exposición y añade máscaras de luz solo donde la foto las necesita (zonas oscuras, zonas claras, cielo, sujeto).
+- **Luz inteligente**: con un clic corrige la exposición y añade máscaras de luz solo donde la foto las necesita (zonas oscuras, zonas claras, cielo, rostros o sujeto). Reconoce el cielo y los rostros en la foto (en tu PC, sin enviar nada), deja oscuras las fotos nocturnas y puede dar la misma corrección a toda una serie de tomas.
 - **Máscaras de luz fáciles**: un panel simplificado para principiantes, con recetas listas y sin controles técnicos.
 
 ### ✨ Edición con IA (opcional)

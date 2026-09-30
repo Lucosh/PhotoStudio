@@ -19,19 +19,29 @@
     <ApplicationIcon>Assets\PhotoStudio.ico</ApplicationIcon>
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
-    <!-- When publishing as a single file, bundle the LibRaw native DLL inside the exe. -->
+    <!-- When publishing as a single file, bundle the native DLLs (LibRaw, ONNX Runtime) inside the exe. -->
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- Interface translations: the Italian text in the code is the key. -->
     <EmbeddedResource Include="Localization\*.json" LogicalName="PhotoStudio.Localization.%(Filename).json" />
+    <!-- YuNet face detector: tells the automatic light tools where the faces are. -->
+    <EmbeddedResource Include="Assets\face_detection_yunet_2023mar.onnx" LogicalName="PhotoStudio.Assets.FaceDetector.onnx" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Anthropic" Version="12.50.0" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.30.0" />
     <PackageReference Include="Sdcb.LibRaw" Version="0.21.1.7" />
     <PackageReference Include="Sdcb.LibRaw.runtime.win64" Version="0.21.1" />
   </ItemGroup>
+
+  <!-- ONNX Runtime ships its C++ import libraries among the native files: they have no use next to the exe. -->
+  <Target Name="DropImportLibraries" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.lib'" />
+    </ItemGroup>
+  </Target>
 
 </Project>

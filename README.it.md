@@ -52,7 +52,7 @@ Scegli le foto migliori di un servizio, sviluppa i RAW e ritocca, con l'aiuto fa
 
 ### ☀️ Luce intelligente, anche per principianti
 
-- **Luce intelligente**: con un clic corregge l'esposizione e aggiunge maschere di luce solo dove servono (zone scure, zone chiare, cielo, soggetto).
+- **Luce intelligente**: con un clic corregge l'esposizione e aggiunge maschere di luce solo dove servono (zone scure, zone chiare, cielo, volti o soggetto). Riconosce il cielo e i volti nella foto (sul tuo PC, senza inviare nulla), lascia scure le notturne e può dare la stessa correzione a un'intera serie di scatti.
 - **Maschere di luce (facile)**: un pannello semplificato per principianti, con ricette pronte e senza cursori tecnici.
 
 ### ✨ Modifica con l'AI (facoltativa)

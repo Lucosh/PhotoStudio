@@ -83,7 +83,7 @@
                     <MenuItem Header="Seppia" Tag="adj.sepia" Click="Menu_Click"/>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="✨ Miglioramento automatico (Camera Raw)" InputGestureText="Alt+Shift+Ctrl+A" Tag="adj.autoenhance" Click="Menu_Click"/>
+                <MenuItem Header="✨ Miglioramento automatico (Camera Raw)..." InputGestureText="Alt+Shift+Ctrl+A" Tag="adj.autoenhance" Click="Menu_Click"/>
                 <MenuItem Header="☀ Luce intelligente..." InputGestureText="Alt+Ctrl+L" Tag="dev.smartlight" Click="Menu_Click"/>
                 <MenuItem Header="◐ Maschere di luce (facile)..." InputGestureText="Alt+Ctrl+M" Tag="dev.masks" Click="Menu_Click"/>
                 <MenuItem Header="Tono automatico" InputGestureText="Shift+Ctrl+L" Tag="adj.autotone" Click="Menu_Click"/>
@@ -171,7 +171,7 @@
             <Button x:Name="AutoEnhanceButton" DockPanel.Dock="Right" Margin="0,0,10,0" Padding="12,3" VerticalAlignment="Center"
                     Background="{StaticResource AccentBrush}" BorderBrush="{StaticResource AccentBrush}" Focusable="False"
                     Tag="adj.autoenhance" Click="OptAction_Click"
-                    ToolTip="Come l'Automatico di Camera Raw: regola esposizione, contrasto, luci, ombre, bianchi, neri, vividezza e saturazione (Alt+Shift+Ctrl+A)">
+                    ToolTip="Come l'Automatico di Camera Raw: regola esposizione, contrasto, luci, ombre, bianchi, neri, vividezza e saturazione, con l'intensità che scegli.&#x0a;Con una selezione misura e corregge solo la zona selezionata (Alt+Shift+Ctrl+A)">
                 <TextBlock Text="✨  Automatico" FontWeight="SemiBold" Foreground="White"/>
             </Button>
             <Button x:Name="SmartLightButton" DockPanel.Dock="Right" Margin="0,0,8,0" Padding="12,3" VerticalAlignment="Center"

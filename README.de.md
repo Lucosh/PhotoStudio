@@ -52,7 +52,7 @@ Ein ganzes Shooting aussortieren, RAW-Dateien entwickeln und retuschieren, auf W
 
 ### ☀️ Intelligentes Licht, ganz einfach
 
-- **Intelligentes Licht**: ein Klick korrigiert die Belichtung und fügt Lichtmasken nur dort hinzu, wo das Foto sie braucht (dunkle Bereiche, helle Bereiche, Himmel, Motiv).
+- **Intelligentes Licht**: ein Klick korrigiert die Belichtung und fügt Lichtmasken nur dort hinzu, wo das Foto sie braucht (dunkle Bereiche, helle Bereiche, Himmel, Gesichter oder Motiv). Es erkennt Himmel und Gesichter im Foto (auf deinem PC, nichts wird hochgeladen), lässt Nachtaufnahmen dunkel und kann einer ganzen Aufnahmeserie dieselbe Korrektur geben.
 - **Einfache Lichtmasken**: ein vereinfachtes Bedienfeld für Einsteiger, mit fertigen Rezepten und ohne technische Regler.
 
 ### ✨ Bearbeitung mit KI (optional)

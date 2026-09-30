@@ -205,23 +205,89 @@ namespace PhotoStudio
             return s;
         }
 
+        double _enhanceIntensity = 100;
+
+        /// <summary>
+        /// "Miglioramento automatico", with its intensity. A photo not edited since it was developed is developed
+        /// again from the original (a RAW keeps its full quality, and the values stay editable in Camera Raw);
+        /// otherwise the active layer is corrected as a filter, and with a selection only the selected area is
+        /// measured and changed.
+        /// </summary>
         void AutoEnhance()
         {
             var layer = ActiveLayer;
             if (layer == null) return;
+            var s = S;
+            var sel = s.Selection;
             var original = layer.Pixels;
-            byte[] result;
-            RawSettings settings;
-            using (Busy())
+            int w = Doc.Width, h = Doc.Height;
+            bool fromOriginal = sel == null && s.IsAsDeveloped && s.SourcePath != null && File.Exists(s.SourcePath);
+            RawImage src;
+            RawSettings start, auto;
+            try
             {
-                var linear = RawImage.FromBgra(original, Doc.Width, Doc.Height);
-                settings = RawDevelop.AutoTone(linear.Downscale(1200), RawSettings.Default(false));
-                result = RawDevelop.Render(linear, settings);
+                using (Busy())
+                {
+                    src = fromOriginal ? OriginalOf(s) : RawImage.FromBgra(original, w, h);
+                    start = fromOriginal ? s.RawSettings ?? RawSettings.Default(src.SceneReferred) : RawSettings.Default(false);
+                    auto = RawDevelop.AutoEnhance(sel != null ? src.Within(sel.Mask) : src, start);
+                }
             }
-            layer.Pixels = ImageOps.ApplyMask(original, result, S.Selection);
-            Recomposite();
-            Commit(T("Miglioramento automatico"));
-            Status(T("Miglioramento automatico: {0}   (Ctrl+Z per annullare)", settings.Describe()));
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, T("Miglioramento automatico non riuscito:\n{0}", ex.Message), T("Miglioramento automatico"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            (int Width, int Height, byte[] Pixels) Develop(RawSettings settings) => fromOriginal
+                ? RawDevelop.Develop(src, settings)
+                : (w, h, ImageOps.ApplyMask(original, RawDevelop.Render(src, settings), sel));
+
+            int ticket = 0;
+            async void Preview(double[] v)
+            {
+                int my = ++ticket;
+                if (v == null)
+                {
+                    layer.Pixels = original;
+                    Recomposite();
+                    return;
+                }
+                (int Width, int Height, byte[] Pixels) r;
+                try { r = await Task.Run(() => Develop(RawDevelop.Blend(start, auto, v[0]))); }
+                catch { return; }
+                if (my != ticket || r.Width != w || r.Height != h) return;
+                layer.Pixels = r.Pixels;
+                Recomposite();
+            }
+
+            var dlg = new ParamDialog(this, T("Miglioramento automatico"), new[] { new ParamSpec(T("Intensità"), 0, 150, _enhanceIntensity) }, Preview);
+            bool ok = dlg.ShowDialog() == true;
+            ticket++; // discard previews still running
+            layer.Pixels = original;
+            if (!ok)
+            {
+                Recomposite();
+                return;
+            }
+            _enhanceIntensity = dlg.Values[0];
+            var chosen = RawDevelop.Blend(start, auto, _enhanceIntensity);
+            (int Width, int Height, byte[] Pixels) result;
+            using (Busy()) result = Develop(chosen);
+            if (fromOriginal)
+            {
+                ReplaceDeveloped(result.Width, result.Height, result.Pixels, T("Miglioramento automatico"));
+                MarkDeveloped(s, chosen);
+                var item = BatchItemOf(s);
+                if (item != null) { item.Settings = chosen.Clone(); SaveBatchState(); }
+            }
+            else
+            {
+                layer.Pixels = result.Pixels;
+                Recomposite();
+                Commit(T("Miglioramento automatico"));
+            }
+            Status(T("Miglioramento automatico: {0}   (Ctrl+Z per annullare)", chosen.Describe()));
         }
 
         /// <param name="startTab">Camera Raw tab to open (e.g. "Maschere").</param>

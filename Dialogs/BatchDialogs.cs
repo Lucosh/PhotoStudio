@@ -148,13 +148,14 @@ namespace PhotoStudio.Dialogs
         readonly Slider _intensity;
         readonly RadioButton _toOpen, _toBatch, _saveNow;
         readonly ComboBox _minRating;
+        readonly CheckBox _series;
 
-        public SmartLightDialog(Window owner, bool hasOpenPhoto, int pendingCount, double intensity) : base(owner, T("☀ Luce intelligente"))
+        public SmartLightDialog(Window owner, bool hasOpenPhoto, int pendingCount, double intensity, bool series) : base(owner, T("☀ Luce intelligente"))
         {
             Body.Children.Add(new TextBlock
             {
                 Width = 440, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12),
-                Text = T("Sistema la luce in un clic: esposizione e toni come l'Automatico di Camera Raw, poi maschere di luce solo dove servono (schiarisce le zone scure, recupera luci e cielo, dà luce al soggetto). Ogni foto viene analizzata da sola."),
+                Text = T("Sistema la luce in un clic: esposizione e toni come l'Automatico di Camera Raw, poi maschere di luce solo dove servono (schiarisce le zone scure, recupera luci e cielo, dà luce ai volti o al soggetto)."),
             });
             var value = new TextBlock { Width = 44, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Right };
             _intensity = new Slider { Width = 250, Minimum = 0, Maximum = 150, Value = intensity, SmallChange = 5, LargeChange = 25, VerticalAlignment = VerticalAlignment.Center };
@@ -178,6 +179,12 @@ namespace PhotoStudio.Dialogs
             var later = new RadioButton { Content = T("Prepara soltanto: le trovo sistemate quando apro ogni foto"), GroupName = "m", IsChecked = true, Margin = new Thickness(0, 0, 0, 6) };
             batch.Children.Add(_saveNow);
             batch.Children.Add(later);
+            _series = new CheckBox
+            {
+                Content = T("Serie coerente: stessa correzione di base per le foto scattate di seguito"), IsChecked = series, Margin = new Thickness(0, 4, 0, 6),
+                ToolTip = T("Le foto vengono prima analizzate tutte: quelle scattate a meno di un minuto l'una dall'altra, con la stessa luce,\nricevono la stessa esposizione e gli stessi toni, così la serie non cambia aspetto da una foto all'altra.\nCielo e volti restano quelli di ogni foto. Senza spunta ogni foto viene analizzata da sola."),
+            };
+            batch.Children.Add(_series);
             Body.Children.Add(batch);
             _toBatch.Checked += (s, e) => batch.IsEnabled = true;
             _toOpen.Checked += (s, e) => batch.IsEnabled = false;
@@ -190,6 +197,8 @@ namespace PhotoStudio.Dialogs
         public bool ToOpenPhoto { get; private set; }
         public bool SaveNow { get; private set; }
         public int MinRating { get; private set; }
+        /// <summary>Photos taken one after the other get the same base correction.</summary>
+        public bool Series { get; private set; }
 
         protected override void OnOk()
         {
@@ -197,6 +206,7 @@ namespace PhotoStudio.Dialogs
             ToOpenPhoto = _toOpen.IsChecked == true;
             SaveNow = _saveNow.IsChecked == true;
             MinRating = _minRating.SelectedIndex;
+            Series = _series.IsChecked == true;
             base.OnOk();
         }
     }

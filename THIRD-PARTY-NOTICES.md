@@ -10,6 +10,8 @@ following third-party components, which remain under their own licenses.
 | [Sdcb.LibRaw](https://github.com/sdcb/Sdcb.LibRaw) | .NET wrapper for LibRaw | MIT |
 | [Anthropic C# SDK](https://www.nuget.org/packages/Anthropic) | Optional AI editing with Claude | MIT |
 | Microsoft.Extensions.AI.Abstractions, System.Text.Json, System.Net.ServerSentEvents | Dependencies of the Anthropic SDK | MIT |
+| [ONNX Runtime](https://github.com/microsoft/onnxruntime) (via `Microsoft.ML.OnnxRuntime`, with System.Numerics.Tensors) | Running the face detector on the processor, offline | MIT |
+| [YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) face detection model (`face_detection_yunet_2023mar.onnx`, © 2020 Shiqi Yu) | Finding the faces for the automatic light tools | MIT |
 
 LibRaw is used unmodified. Its source code is available at <https://github.com/LibRaw/LibRaw>
 and the native build used here at <https://github.com/sdcb/Sdcb.LibRaw>.

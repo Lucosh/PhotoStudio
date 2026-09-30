@@ -25,8 +25,8 @@ namespace PhotoStudio.Dialogs
 
         int _maskIndex = -1;
         ListBox _maskList;
-        StackPanel _maskEditor, _zonePanel, _linearPanel, _radialPanel;
-        CheckBox _maskEnabled, _maskShow, _maskInvert;
+        StackPanel _maskEditor, _zonePanel, _linearPanel, _radialPanel, _skyPanel;
+        CheckBox _maskEnabled, _maskShow, _maskInvert, _skyInvert;
         TextBlock _maskTitle;
         RangeBar _rangeBar;
         readonly Button[] _zoneButtons = new Button[5];
@@ -67,8 +67,10 @@ namespace PhotoStudio.Dialogs
                 () => new LocalMask { Name = T("Ombre profonde"), Kind = MaskKind.Luminance, Low = 0, High = 0.22, Feather = 0.12, Exposure = -0.3, Contrast = 15 });
             Recipe(T("🌅 Luci più calde"), T("Luci dorate, come al tramonto"),
                 () => new LocalMask { Name = T("Luci calde"), Kind = MaskKind.Luminance, Low = 0.55, High = 1, Feather = 0.2, Temperature = 30, Tint = 5, Saturation = 15 });
-            Recipe(T("⛅ Cielo più intenso"), T("Sfumatura dall'alto: cielo più scuro e colorato"),
-                () => new LocalMask { Name = T("Cielo"), Kind = MaskKind.Linear, X1 = (_s.CropL + _s.CropR) / 2, Y1 = _s.CropT, X2 = (_s.CropL + _s.CropR) / 2, Y2 = _s.CropT + (_s.CropB - _s.CropT) * 0.45, Exposure = -0.4, Saturation = 20, Contrast = 10, Temperature = -5 });
+            Recipe(T("⛅ Cielo più intenso"), T("Cielo più scuro e colorato: segue il profilo del cielo riconosciuto nella foto, altrimenti è una sfumatura dall'alto"),
+                () => SceneAnalysis.Of(_preview).Sky != null
+                    ? new LocalMask { Name = T("Cielo"), Kind = MaskKind.Sky, Exposure = -0.4, Saturation = 20, Contrast = 10, Temperature = -5 }
+                    : new LocalMask { Name = T("Cielo"), Kind = MaskKind.Linear, X1 = (_s.CropL + _s.CropR) / 2, Y1 = _s.CropT, X2 = (_s.CropL + _s.CropR) / 2, Y2 = _s.CropT + (_s.CropB - _s.CropT) * 0.45, Exposure = -0.4, Saturation = 20, Contrast = 10, Temperature = -5 });
             Recipe(T("◎ Luce sul soggetto"), T("Un alone di luce al centro che attira lo sguardo"),
                 () => new LocalMask { Name = T("Soggetto"), Kind = MaskKind.Radial, X1 = (_s.CropL + _s.CropR) / 2, Y1 = (_s.CropT + _s.CropB) / 2, RX = 0.28 * (_s.CropR - _s.CropL), RY = 0.34 * (_s.CropB - _s.CropT), Feather = 0.7, Exposure = 0.35, Clarity = 8 });
             Recipe(T("❄ Ombre più fredde"), T("Ombre bluastre: look cinematografico"),
@@ -228,6 +230,19 @@ namespace PhotoStudio.Dialogs
             _radialPanel.Children.Add(_maskInvert);
             _maskEditor.Children.Add(_radialPanel);
 
+            _skyPanel = new StackPanel();
+            _skyPanel.Children.Add(Hint(T("Il cielo è riconosciuto nella foto e la maschera ne segue il profilo (tetti, montagne, rami): non c'è niente da spostare. Attiva \"Mostra in rosso la zona modificata\" per vedere dove agisce.")));
+            _skyInvert = new CheckBox { Content = T("Modifica tutto tranne il cielo (inverti)"), Margin = new Thickness(0, 4, 0, 0) };
+            _skyInvert.Click += (s, e) =>
+            {
+                var m = SelMask(_s);
+                if (m == null) return;
+                m.Invert = _skyInvert.IsChecked == true;
+                Edited();
+            };
+            _skyPanel.Children.Add(_skyInvert);
+            _maskEditor.Children.Add(_skyPanel);
+
             _maskShow = new CheckBox { Content = T("Mostra in rosso la zona modificata"), Margin = new Thickness(0, 8, 0, 0) };
             _maskShow.Click += (s, e) => Schedule();
             _maskEditor.Children.Add(_maskShow);
@@ -306,7 +321,7 @@ namespace PhotoStudio.Dialogs
         {
             _maskListLoading = true;
             _maskList.ItemsSource = _s.Masks.Select(m =>
-                $"{(m.Enabled ? "●" : "○")}  {m.Name}   —   {(m.Kind == MaskKind.Luminance ? T("zona di luce") : m.Kind == MaskKind.Linear ? T("lineare") : T("radiale"))}").ToList();
+                $"{(m.Enabled ? "●" : "○")}  {m.Name}   —   {m.Kind switch { MaskKind.Luminance => T("zona di luce"), MaskKind.Linear => T("lineare"), MaskKind.Sky => T("cielo"), _ => T("radiale") }}").ToList();
             _maskList.SelectedIndex = _maskIndex;
             _maskListLoading = false;
         }
@@ -318,10 +333,11 @@ namespace PhotoStudio.Dialogs
             if (m == null) { UpdateOverlay(); return; }
             _maskTitle.Text = m.Name;
             _maskEnabled.IsChecked = m.Enabled;
-            _maskInvert.IsChecked = m.Invert;
+            _maskInvert.IsChecked = _skyInvert.IsChecked = m.Invert;
             _zonePanel.Visibility = m.Kind == MaskKind.Luminance ? Visibility.Visible : Visibility.Collapsed;
             _linearPanel.Visibility = m.Kind == MaskKind.Linear ? Visibility.Visible : Visibility.Collapsed;
             _radialPanel.Visibility = m.Kind == MaskKind.Radial ? Visibility.Visible : Visibility.Collapsed;
+            _skyPanel.Visibility = m.Kind == MaskKind.Sky ? Visibility.Visible : Visibility.Collapsed;
             RefreshSliders();
             UpdateZoneUi();
             UpdateOverlay();
@@ -354,7 +370,7 @@ namespace PhotoStudio.Dialogs
                 return;
             }
             var m = SelMask(_s);
-            if (m == null || m.Kind == MaskKind.Luminance) return;
+            if (m == null || m.Kind is MaskKind.Luminance or MaskKind.Sky) return;   // nothing to drag
             var white = Brushes.White;
             var shadow = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0));
             void Handle(Point c, bool filled, bool square = false)

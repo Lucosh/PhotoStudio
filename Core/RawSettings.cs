@@ -15,11 +15,12 @@ namespace PhotoStudio.Core
         All = WhiteBalance | Exposure | Tone | Presence | Detail | Curve | Color | Effects | Geometry | Masks,
     }
 
-    public enum MaskKind { Luminance, Linear, Radial }
+    public enum MaskKind { Luminance, Linear, Radial, Sky }
 
     /// <summary>
-    /// A local adjustment, as the masks of Lightroom: a zone of light (luminance range), a linear gradient or a
-    /// radial gradient. Positions are normalised (0..1) in the straightened photo, before the crop.
+    /// A local adjustment, as the masks of Lightroom: a zone of light (luminance range), a linear gradient, a
+    /// radial gradient or the sky, which is found in the photo (see <see cref="SkyMap"/>). Positions are
+    /// normalised (0..1) in the straightened photo, before the crop.
     /// </summary>
     public sealed class LocalMask
     {
@@ -28,7 +29,7 @@ namespace PhotoStudio.Core
         public bool Enabled = true;
         /// <summary>Created by Luce intelligente, which replaces its own masks when it runs again.</summary>
         public bool Auto;
-        /// <summary>Radial: adjust outside the ellipse instead of inside. Luminance: every tone except the range.</summary>
+        /// <summary>Radial: adjust outside the ellipse instead of inside. Luminance: every tone except the range. Sky: everything but the sky.</summary>
         public bool Invert;
 
         // Luminance range (perceptual 0..1): full effect between Low and High, fading out over Feather.
