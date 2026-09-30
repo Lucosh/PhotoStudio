@@ -76,4 +76,12 @@ jobs:
           "@
           $files = (Get-ChildItem artifacts -File).FullName
           $pre = if ($version.Contains('-')) { '--prerelease' } else { '--latest' }
-          gh release create $env:TAG @files --title "PhotoStudio $version" --notes $notes --generate-notes --verify-tag $pre
+          # A release made by hand on the website for this tag is filled in instead of failing.
+          gh release view $env:TAG *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $env:TAG @files --clobber
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            gh release edit $env:TAG --title "PhotoStudio $version" --notes $notes $pre
+          } else {
+            gh release create $env:TAG @files --title "PhotoStudio $version" --notes $notes --generate-notes --verify-tag $pre
+          }
