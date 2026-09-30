@@ -1,98 +1,147 @@
+<div align="center">
+
+<img src="Assets/icon-256.png" width="112" alt="PhotoStudio icon">
+
+# PhotoStudio
+
+**A free, open-source photo editor for Windows.**<br>
+Sort a whole shoot, develop your RAW files and retouch them, with optional AI help.
+
+[![Download](https://img.shields.io/badge/Download-for%20Windows-2F80ED?style=for-the-badge)](../../releases/latest)
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-2F80ED)](LICENSE)
+![Windows 10 | 11](https://img.shields.io/badge/Windows-10%20%7C%2011-2F80ED)
+![.NET 10](https://img.shields.io/badge/.NET-10-512BD4)
+![Languages](https://img.shields.io/badge/languages-EN%20%7C%20IT%20%7C%20DE%20%7C%20FR%20%7C%20ES-555)
+
+**English** · [Italiano](README.it.md) · [Deutsch](README.de.md) · [Français](README.fr.md) · [Español](README.es.md)
+
+</div>
+
 <p align="center">
-  <img src="Assets/icon-256.png" width="112" alt="PhotoStudio icon">
+  <img src="Assets/screenshots/camera-raw.png" alt="The Camera Raw window of PhotoStudio, with the color mixer and the color grading wheels">
 </p>
 
-<h1 align="center">PhotoStudio</h1>
-
 <p align="center">
-  <b>A free, open-source photo editor for Windows.</b><br>
-  Sort a whole shoot, develop your RAW files and retouch them, with optional AI help.
+  <a href="#features">Features</a> ·
+  <a href="#installation">Installation</a> ·
+  <a href="#is-it-safe-verify-your-download">Is it safe?</a> ·
+  <a href="#privacy">Privacy</a> ·
+  <a href="#setting-up-the-ai">AI setup</a> ·
+  <a href="#for-developers">For developers</a>
 </p>
-
-<p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F80ED" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/Windows-10%20%7C%2011-2F80ED" alt="Windows 10 | 11">
-  <img src="https://img.shields.io/badge/.NET-10-512BD4" alt=".NET 10">
-</p>
-
-<p align="center">
-  <b>English</b> · <a href="README.it.md">Italiano</a> · <a href="README.de.md">Deutsch</a> · <a href="README.fr.md">Français</a> · <a href="README.es.md">Español</a>
-</p>
-
-<p align="center">
-  <a href="../../releases/latest"><b>⬇ Download the latest version</b></a>
-</p>
-
-> [!NOTE]
-> The interface is available in English, Italian, German, French and Spanish: PhotoStudio uses the Windows language, and you can change it in *View ▸ Language*.
 
 ## Features
 
 ### 🗂️ Culling
+
 - Open a whole folder or just a few photos, and choose which formats to show (for example, only RAW files).
-- Star ratings and colour labels, with filters to show only the photos you want.
+- Star ratings and color labels, with filters to show only the photos you want.
 - Bursts are grouped automatically, so you can pick the best shot quickly.
-- Compare photos side by side with synchronised zoom.
+- Compare photos side by side with synchronized zoom.
 - Shooting data (camera, lens, ISO, shutter speed, aperture) and a histogram with clipping warnings.
 - Your work is saved: reopen the folder and carry on where you left off.
 
 ### 🎞️ RAW development
+
 - Opens more than 25 camera RAW formats (CR2, CR3, NEF, ARW, DNG, RAF, ORF, RW2 and more), as well as JPEG, PNG, TIFF, WebP and HEIC.
 - White balance, exposure, contrast, highlights, shadows, whites, blacks, texture, clarity, dehaze, vibrance and saturation.
-- Tone curve (RGB and per channel), HSL colour mixer and colour grading wheels.
+- Tone curve (RGB and per channel), HSL color mixer and color grading wheels.
 - Sharpening, noise reduction, vignette, grain, crop and straighten.
 - Local masks (linear, radial and by brightness), a before/after view, presets, and copy/paste of settings.
 
 ### ☀️ Smart light, made easy
+
 - **Smart light**: one click fixes the exposure, then adds light masks only where the photo needs them (dark areas, bright areas, sky, subject).
-- **Easy light masks**: a simplified panel for beginners, with a few clear choices and no technical sliders.
+- **Easy light masks**: a simplified panel for beginners, with ready-made recipes and no technical sliders.
 
 ### ✨ AI-assisted editing (optional)
+
 - Describe what you want ("warmer, like a sunset") or let the AI choose the best edit.
-- Works with **Google Gemini** (free key), **Anthropic Claude**, or **Ollama** (completely offline, on your PC).
+- Works with **Google Gemini** (free key), **Anthropic Claude** or **Ollama** (completely offline, on your PC).
 - The AI only picks slider values. PhotoStudio renders the pixels itself, so every edit stays visible and editable.
 
 ### 🖌️ Photo editor and batch work
+
 - Layers, selections, brush, adjustments (levels, curves, hue/saturation, black and white…) and filters (blur, sharpen, noise, vignette…).
 - `.psx` project format, which keeps your layers.
 - Apply settings or presets to many photos at once.
 - Export with resizing, automatic renaming and a watermark.
 
+### 🌍 In your language
+
+The interface is available in English, Italian, German, French and Spanish. PhotoStudio follows the Windows language, and you can change it in **View ▸ Language**.
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="Assets/screenshots/culling.png" alt="Culling window with the photo strip and the histogram"><br>
+      <sub><b>Culling</b>: browse a shoot, rate it and delete the rejects.</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="Assets/screenshots/masks.png" alt="Masks tab with the quick recipes"><br>
+      <sub><b>Easy light masks</b>: one-click recipes for sky, shadows and subject.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" valign="top">
+      <img src="Assets/screenshots/editor.png" alt="Main window with layers, history and histogram"><br>
+      <sub><b>Editor</b>: layers, tools, history and histogram.</sub>
+    </td>
+  </tr>
+</table>
+
 ## Installation
 
 1. Open the [**latest release**](../../releases/latest).
-2. Download **`PhotoStudio-x.y.z-win-x64-setup.exe`** (installer) or the **`…-portable.zip`** (no installation: unzip it and run `PhotoStudio.exe`).
-3. Run it. It needs Windows 10 or 11 (64-bit) and nothing else: .NET is already included.
+2. Download one of the two files:
+   - **`PhotoStudio-x.y.z-win-x64-setup.exe`**: the installer (recommended);
+   - **`PhotoStudio-x.y.z-win-x64-portable.zip`**: no installation, just unzip it and run `PhotoStudio.exe`.
+3. Run it. You only need Windows 10 or 11 (64-bit): .NET is already included.
 
-The installer does not need administrator rights and can be removed from *Settings ▸ Apps*.
+The installer does not need administrator rights, and you can remove the program from **Settings ▸ Apps**.
 
 > [!IMPORTANT]
-> **"Windows protected your PC"?** Windows shows this message for new programs that are not yet widely downloaded or signed with a paid certificate. Click **More info ▸ Run anyway**. If you want to be sure first, verify the file as described below.
+> **"Windows protected your PC"?** Windows shows this message for new programs that are not yet widely downloaded or signed with a paid certificate. Click **More info**, then **Run anyway**. If you want to be sure first, verify the file as described below.
 
 ## Is it safe? Verify your download
 
 - **Everything is open source**: you can read every line of code in this repository.
 - **Built by GitHub, not on a personal PC**: each release is compiled by [GitHub Actions](.github/workflows/release.yml) directly from the public code. The link to the build log is in the release notes.
-- **Checksum**: in PowerShell, `Get-FileHash .\PhotoStudio-x.y.z-win-x64-setup.exe` must match the line in `SHA256SUMS.txt` of the same release.
-- **Signed build provenance**: with the [GitHub CLI](https://cli.github.com/) you can check that the file was produced by this repository:
+- **Checksum**: in PowerShell, the result of this command must match the line in `SHA256SUMS.txt` of the same release:
+
+  ```powershell
+  Get-FileHash .\PhotoStudio-x.y.z-win-x64-setup.exe
+  ```
+
+- **Signed build provenance**: with the [GitHub CLI](https://cli.github.com/) you can check that the file was built by this repository (replace `OWNER/REPO` with the address of this repository):
+
   ```powershell
   gh attestation verify .\PhotoStudio-x.y.z-win-x64-setup.exe --repo OWNER/REPO
   ```
-  (replace `OWNER/REPO` with the address of this repository).
 
 ## Privacy
 
 - No accounts, no ads and no telemetry. PhotoStudio works offline.
 - Your photos never leave your PC, **unless you use the AI features**. In that case PhotoStudio sends only a small preview (at most 1024 pixels on the long side), the slider values, the camera model and shooting settings, and a few brightness statistics. It sends no file names and no GPS position, and only to the service you chose. With Ollama, everything stays on your computer.
-- API keys are encrypted with Windows (DPAPI) and saved only in `%APPDATA%\PhotoStudio`, readable only by your Windows account.
+- API keys are encrypted by Windows (DPAPI) and saved only in `%APPDATA%\PhotoStudio`, readable only by your Windows account.
 
-### Setting up the AI
-Go to *Modifica ▸ Impostazioni AI* (Edit ▸ AI settings) and choose a provider:
-- **Gemini**: get a free key at [Google AI Studio](https://aistudio.google.com/apikey). The recommended model is `gemini-flash-latest`.
-- **Claude**: get a key at [console.anthropic.com](https://console.anthropic.com/) (paid use).
-- **Ollama**: install [Ollama](https://ollama.com/) and a vision model (for example `ollama pull gemma3`). It is free and runs offline.
+## Setting up the AI
 
-## Build from source
+Open **Edit ▸ AI Settings** and choose a service:
+
+| Service | Cost | What you need |
+|---|---|---|
+| **Gemini** | Free (with daily limits) | A key from [Google AI Studio](https://aistudio.google.com/apikey). Recommended model: `gemini-flash-latest`. |
+| **Claude** | Paid | A key from the [Claude Console](https://console.anthropic.com/). |
+| **Ollama** | Free, offline | [Ollama](https://ollama.com/) and a vision model, for example `ollama pull gemma3`. |
+
+## For developers
+
+<details>
+<summary><b>Build from source</b></summary>
+
+<br>
 
 Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download) on Windows.
 
@@ -102,19 +151,37 @@ cd PhotoStudio
 dotnet run -c Release
 ```
 
-To create the release files (single exe, zip, installer and checksums) as GitHub does:
+To create the release files (single exe, zip, installer and checksums) the same way GitHub does:
 
 ```powershell
 .\build.ps1 -Version 1.0.0      # the installer also needs Inno Setup 6
 ```
 
-To publish a new version: update the code, then `git tag v1.0.1` and `git push origin v1.0.1`. GitHub builds and publishes the release by itself.
+To publish a new version, update the code and push a tag. GitHub builds and publishes the release by itself:
 
-## Contributing
+```powershell
+git tag v1.0.1
+git push origin v1.0.1
+```
 
-Bug reports, ideas and pull requests are welcome in [Issues](../../issues).
+</details>
 
-**Translations** live in [`Localization/`](Localization/): one JSON file per language, mapping the Italian text used in the code to its translation. To fix a translation, edit the value; to add a language, copy `en.json`, translate the values and add the language to `Loc.Languages` in [`Core/Loc.cs`](Core/Loc.cs). A missing entry simply shows the Italian text.
+<details>
+<summary><b>Translations</b></summary>
+
+<br>
+
+Translations live in [`Localization/`](Localization/): one JSON file per language, mapping the Italian text used in the code to its translation.
+
+- To fix a translation, edit its value.
+- To add a language, copy `en.json`, translate the values and add the language to `Loc.Languages` in [`Core/Loc.cs`](Core/Loc.cs).
+- A missing entry simply shows the Italian text.
+
+</details>
+
+### Contributing
+
+Bug reports, ideas and pull requests are welcome in [Issues](../../issues). To report a security problem privately, see [SECURITY.md](SECURITY.md).
 
 ## License
 
