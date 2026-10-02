@@ -71,7 +71,8 @@ namespace PhotoStudio.Dialogs
         TextBox _aiInput;
         Button _aiButton, _aiUndo;
         TextBlock _aiText;
-        CancellationTokenSource _aiCts;
+        CancellationTokenSource _aiCts, _okCts;
+        readonly CancellationTokenSource _closeCts = new CancellationTokenSource();
         RawSettings _beforeAi;
         readonly DispatcherTimer _aiTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         DateTime _aiStart;
@@ -192,6 +193,7 @@ namespace PhotoStudio.Dialogs
             _cancel = new Button { Content = T("Annulla"), IsCancel = true, MinWidth = 96 };
             _ok = new Button { Content = okText, IsDefault = true, MinWidth = 120, Margin = new Thickness(8, 0, 0, 0) };
             _ok.Click += Ok_Click;
+            _cancel.Click += (s, e) => { if (_okCts != null) { _aiStopped = true; _okCts.Cancel(); } };   // while Ok works: stops it (OnClosing keeps the window open)
             buttons.Children.Add(_cancel);
             buttons.Children.Add(_ok);
             bottom.Children.Add(buttons);
@@ -890,6 +892,7 @@ namespace PhotoStudio.Dialogs
         async void RenderPreview()
         {
             int my = ++_ticket;
+            _aiStopped = false;
             bool original = _showOriginal.IsChecked == true;
             var s = original ? _defaults.Clone() : _s.Clone();
             // While choosing the crop the whole straightened photo is shown, with the crop frame on top.
@@ -900,8 +903,9 @@ namespace PhotoStudio.Dialogs
             {
                 r = await Task.Run(() => cropMode
                     ? RawDevelop.ApplyGeometry(RawDevelop.Render(AiRestore.Apply(_preview, s), s), _preview.Width, _preview.Height, s, false)
-                    : RawDevelop.Develop(_preview, s, maskPreview));
+                    : RawDevelop.Develop(_preview, s, maskPreview, _closeCts.Token));
             }
+            catch (OperationCanceledException) { return; }
             catch (Exception ex) { _status.Text = T("Errore di anteprima: {0}", ex.Message); return; }
             if (my != _ticket || _closed) return;
             if (_bmp.PixelWidth != r.Width || _bmp.PixelHeight != r.Height)
@@ -947,14 +951,21 @@ namespace PhotoStudio.Dialogs
         async void Ok_Click(object sender, RoutedEventArgs e)
         {
             _processing = true;
-            _ok.IsEnabled = _cancel.IsEnabled = false;
-            _status.Text = T("Elaborazione a piena risoluzione ({0} × {1})...", _full.Width, _full.Height);
-            Cursor = Cursors.Wait;
             var s = _s.Clone();
             if (!_allowGeometry) StripGeometry(s);
+            // The AI networks can take minutes at full size: meanwhile Annulla becomes "Interrompi".
+            bool slow = AiRestore.Wanted(s) && !AiRestore.Ready(_full, s);
+            _ok.IsEnabled = false;
+            _cancel.IsEnabled = slow;
+            if (slow) _cancel.Content = T("Interrompi");
+            _okCts = new CancellationTokenSource();
+            _aiStopped = false;
+            var token = _okCts.Token;
+            _status.Text = T("Elaborazione a piena risoluzione ({0} × {1})...", _full.Width, _full.Height);
+            Cursor = Cursors.Wait;
             try
             {
-                var r = await Task.Run(() => RawDevelop.Develop(_full, s));
+                var r = await Task.Run(() => RawDevelop.Develop(_full, s, ct: token));
                 Result = r.Pixels;
                 ResultWidth = r.Width;
                 ResultHeight = r.Height;
@@ -962,13 +973,17 @@ namespace PhotoStudio.Dialogs
             catch (Exception ex)
             {
                 _processing = false;
+                _okCts = null;
                 Cursor = null;
                 _ok.IsEnabled = _cancel.IsEnabled = true;
+                _cancel.Content = T("Annulla");
+                if (ex is OperationCanceledException) { _status.Text = T("Elaborazione interrotta."); return; }
                 _status.Text = "";
                 MessageBox.Show(this, T("Elaborazione non riuscita:\n{0}", ex.Message), "Camera Raw", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             _processing = false;
+            _okCts = null;
             Cursor = null;
             DialogResult = true;
         }
@@ -979,6 +994,7 @@ namespace PhotoStudio.Dialogs
             _closed = true;
             _aiCts?.Cancel();
             _downloadCts?.Cancel();
+            _closeCts.Cancel();
             _aiTimer.Stop();
         }
     }

@@ -20,9 +20,11 @@ namespace PhotoStudio.Core
         // ================= Develop = render + straighten/crop =================
 
         /// <summary>The finished photo: every tool, then straighten and crop.</summary>
-        public static (int Width, int Height, byte[] Pixels) Develop(RawImage img, RawSettings s, int maskPreview = -1)
+        /// <param name="ct">Interrupts the AI networks, the only slow part (see <see cref="AiRestore"/>).</param>
+        public static (int Width, int Height, byte[] Pixels) Develop(RawImage img, RawSettings s, int maskPreview = -1,
+                                                                     System.Threading.CancellationToken ct = default)
         {
-            var px = Render(AiRestore.Apply(img, s), s, maskPreview);
+            var px = Render(AiRestore.Apply(img, s, ct), s, maskPreview);
             if (!s.HasGeometry) return (img.Width, img.Height, px);
             return ApplyGeometry(px, img.Width, img.Height, s, true);
         }

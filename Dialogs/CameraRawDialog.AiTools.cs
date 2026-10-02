@@ -12,7 +12,7 @@ namespace PhotoStudio.Dialogs
     public sealed partial class CameraRawDialog
     {
         ComboBox _refocusArea;
-        bool _downloading;
+        bool _downloading, _aiStopped;
         CancellationTokenSource _downloadCts;
 
         void BuildAiDetailSection(Panel p)
@@ -39,7 +39,7 @@ namespace PhotoStudio.Dialogs
             Grid.SetColumn(_refocusArea, 1);
             area.Children.Add(_refocusArea);
             p.Children.Add(area);
-            p.Children.Add(Hint(T("Le reti lavorano sul tuo PC (sulla scheda video, se possibile) e nulla viene inviato. La prima volta si scarica il modello; poi l'anteprima richiede qualche secondo, e Ok la rifà a piena risoluzione: per una foto da 24 MP servono da uno a qualche minuto.")));
+            p.Children.Add(Hint(T("Le reti lavorano sul tuo PC (sulla scheda video, se possibile) e nulla viene inviato. La prima volta si scarica il modello; poi l'anteprima richiede qualche secondo, e Ok la rifà a piena risoluzione: per una foto da 24 MP servono da uno a qualche minuto, e Interrompi la ferma. Il risultato resta salvato: riaprendo la foto è subito pronto.")));
 
             AiRestore.Progress += OnAiProgress;
             Closed += (s, e) => AiRestore.Progress -= OnAiProgress;
@@ -58,7 +58,8 @@ namespace PhotoStudio.Dialogs
         {
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                if (_closed) return;
+                // After Interrompi the messages still queued from the stopped work must not cover "interrotta".
+                if (_closed || _aiStopped) return;
                 _status.Text = fraction >= 1 ? T("{0}: fatto.", label) : T("{0}: {1:0}%...", label, fraction * 100);
             }), DispatcherPriority.Background);
         }

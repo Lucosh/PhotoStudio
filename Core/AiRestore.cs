@@ -1,5 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PhotoStudio.Core
@@ -33,15 +39,16 @@ namespace PhotoStudio.Core
         }
 
         /// <summary>The image the development starts from: the original mixed with what the networks made of it.</summary>
-        public static RawImage Apply(RawImage img, RawSettings s)
+        /// <param name="ct">Stops the networks between two tiles (OperationCanceledException); nothing half done is kept.</param>
+        public static RawImage Apply(RawImage img, RawSettings s, CancellationToken ct = default)
         {
             bool dn = s.AiDenoise >= 1 && AiModels.Denoise.Installed, rf = s.AiRefocus >= 1 && AiModels.Deblur.Installed;
             if (!dn && !rf) return img;
             int w = img.Width, h = img.Height;
             var orig = img.Data;
-            var clean = dn ? img.Restore.Get(img, "dn", () => Run(AiModels.Denoise, orig, w, h, Loc.T("Riduzione rumore AI"))) : null;
+            var clean = dn ? img.Restore.Get(img, "dn", AiModels.Denoise, () => Run(AiModels.Denoise, orig, w, h, Loc.T("Riduzione rumore AI"), ct)) : null;
             var basis = clean ?? orig;
-            var sharp = rf ? img.Restore.Get(img, dn ? "rf+dn" : "rf", () => Run(AiModels.Deblur, basis, w, h, Loc.T("Rimessa a fuoco AI"))) : null;
+            var sharp = rf ? img.Restore.Get(img, dn ? "rf+dn" : "rf", AiModels.Deblur, () => Run(AiModels.Deblur, basis, w, h, Loc.T("Rimessa a fuoco AI"), ct)) : null;
             if (clean == null && sharp == null) return img;   // the network could not be loaded
 
             float kd = (float)(Math.Clamp(s.AiDenoise, 0, 100) / 100), kr = (float)(Math.Clamp(s.AiRefocus, 0, 150) / 100);
@@ -69,7 +76,7 @@ namespace PhotoStudio.Core
         /// and encoded as sRGB, as the networks were trained on ordinary photos; what is brighter than the white of the
         /// encoding (the RAW headroom) keeps its original values.
         /// </summary>
-        static ushort[] Run(AiModels.Model model, ushort[] src, int w, int h, string label)
+        static ushort[] Run(AiModels.Model model, ushort[] src, int w, int h, string label, CancellationToken ct)
         {
             var net = AiModels.Get(model);
             if (net == null) return null;
@@ -107,6 +114,7 @@ namespace PhotoStudio.Core
             foreach (int ty in ys)
                 foreach (int tx in xs)
                 {
+                    ct.ThrowIfCancellationRequested();
                     // The tile, mirrored at the edges of the photo when the photo is smaller than a tile.
                     Parallel.For(0, Tile, yy =>
                     {
@@ -232,19 +240,27 @@ namespace PhotoStudio.Core
 
     /// <summary>
     /// What the AI networks made of a photo, for each size of it: shared by the image and its reduced copies like
-    /// <see cref="SceneCache"/>, and dropped with them.
+    /// <see cref="SceneCache"/>. The results are also kept on disk (%LOCALAPPDATA%\PhotoStudio\AiCache, at most
+    /// <see cref="DiskLimit"/>), under a hash of the pixels, so reopening the photo does not run the networks again.
     /// </summary>
     sealed class RestoreCache
     {
+        const long DiskLimit = 4L << 30;
+        static readonly object DiskLock = new object();
         readonly Dictionary<(string, int, int), ushort[]> _done = new Dictionary<(string, int, int), ushort[]>();
+        readonly Dictionary<(int, int), string> _hashes = new Dictionary<(int, int), string>();
         readonly object _work = new object();
+
+        public static string Folder => Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PhotoStudio", "AiCache");
 
         public bool Has(RawImage img, string key)
         {
-            lock (_done) return _done.ContainsKey((key, img.Width, img.Height));
+            lock (_done) if (_done.ContainsKey((key, img.Width, img.Height))) return true;
+            return File.Exists(FileOf(img, key));
         }
 
-        public ushort[] Get(RawImage img, string key, Func<ushort[]> make)
+        public ushort[] Get(RawImage img, string key, AiModels.Model model, Func<ushort[]> make)
         {
             var k = (key, img.Width, img.Height);
             lock (_done) if (_done.TryGetValue(k, out var d)) return d;
@@ -252,10 +268,69 @@ namespace PhotoStudio.Core
             lock (_work)
             {
                 lock (_done) if (_done.TryGetValue(k, out var d)) return d;
-                var r = make();
+                string file = FileOf(img, key);
+                var r = Load(file, img.Data.Length);
+                if (r == null)
+                {
+                    r = make();
+                    if (r != null) Save(file, r);
+                }
                 if (r != null) lock (_done) _done[k] = r;
                 return r;
             }
+        }
+
+        /// <summary>The file of a result: the pixels of the image, the network and the step decide its name.</summary>
+        string FileOf(RawImage img, string key)
+        {
+            string hash;
+            lock (_hashes)
+                if (!_hashes.TryGetValue((img.Width, img.Height), out hash))
+                    _hashes[(img.Width, img.Height)] = hash = Convert.ToHexString(SHA256.HashData(MemoryMarshal.AsBytes(img.Data.AsSpan()))).Substring(0, 32);
+            string models = key.Contains("dn") ? AiModels.Denoise.Sha256[..8] : "";
+            if (key.Contains("rf")) models += AiModels.Deblur.Sha256[..8];
+            return Path.Combine(Folder, $"{hash}-{key.Replace('+', '_')}-{models}-{img.Width}x{img.Height}.bin");
+        }
+
+        static ushort[] Load(string file, int length)
+        {
+            try
+            {
+                if (!File.Exists(file)) return null;
+                var data = new ushort[length];
+                using (var f = File.OpenRead(file))
+                using (var z = new ZLibStream(f, CompressionMode.Decompress))
+                    z.ReadExactly(MemoryMarshal.AsBytes(data.AsSpan()));
+                File.SetLastAccessTimeUtc(file, DateTime.UtcNow);
+                return data;
+            }
+            catch
+            {
+                try { File.Delete(file); } catch { }
+                return null;   // damaged or from another version: made again
+            }
+        }
+
+        static void Save(string file, ushort[] data)
+        {
+            try
+            {
+                lock (DiskLock)
+                {
+                    Directory.CreateDirectory(Folder);
+                    string part = file + ".part";
+                    using (var f = File.Create(part))
+                    using (var z = new ZLibStream(f, CompressionLevel.Fastest))
+                        z.Write(MemoryMarshal.AsBytes(data.AsSpan()));
+                    File.Move(part, file, true);
+                    // The oldest results go when the folder grows past the limit.
+                    var files = new DirectoryInfo(Folder).GetFiles("*.bin").OrderByDescending(x => x.LastAccessTimeUtc).ToList();
+                    long total = 0;
+                    foreach (var x in files)
+                        if ((total += x.Length) > DiskLimit && x.FullName != file) x.Delete();
+                }
+            }
+            catch { }   // a full disk only costs the time of running the network again
         }
     }
 }
