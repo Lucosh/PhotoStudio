@@ -69,6 +69,7 @@ Sort a whole shoot, develop your RAW files and retouch them, with optional AI he
 - Layers, selections, brush, adjustments (levels, curves, hue/saturation, black and white…) and filters (blur, sharpen, noise, vignette…).
 - `.psx` project format, which keeps your layers.
 - **AI enlargement 2×** (Image menu), which rebuilds the detail instead of just stretching the pixels.
+- **Remove with AI** (Edit menu, Shift+Del): select a person or an object, even with **Select ▸ AI subject**, and the background behind it is rebuilt.
 - Apply settings or presets to many photos at once.
 - Export with resizing, automatic renaming and a watermark.
 

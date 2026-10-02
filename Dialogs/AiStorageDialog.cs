@@ -73,7 +73,8 @@ namespace PhotoStudio.Dialogs
         }
 
         static string ModelName(AiModels.Model m) =>
-            m == AiModels.Denoise ? T("Riduzione rumore AI") : m == AiModels.Deblur ? T("Rimessa a fuoco AI") : T("Soggetto AI (maschere)");
+            m == AiModels.Denoise ? T("Riduzione rumore AI") : m == AiModels.Deblur ? T("Rimessa a fuoco AI")
+            : m == AiModels.Inpaint ? T("Rimuovi con AI") : T("Soggetto AI (maschere)");
 
         static void Delete(string folder, string pattern)
         {

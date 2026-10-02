@@ -55,6 +55,8 @@ namespace PhotoStudio
             A("edit.copymerged", () => Copy(true));
             A("edit.paste", Paste, false);
             A("edit.clear", ClearSelectionPixels);
+            A("edit.airemove", AiRemove);
+            A("sel.subject", SelectSubject);
             A("edit.fillfg", () => FillSelection(_primary));
             A("edit.fillbg", () => FillSelection(_secondary));
             A("edit.transform", TransformLayerDialog);
@@ -188,6 +190,7 @@ namespace PhotoStudio
             K("edit.undo", C, Key.Z); K("edit.undo", C | Al, Key.Z); K("edit.redo", C | Sh, Key.Z); K("edit.redo", C, Key.Y);
             K("edit.cut", C, Key.X); K("edit.copy", C, Key.C); K("edit.copymerged", C | Sh, Key.C); K("edit.paste", C, Key.V);
             K("edit.clear", None, Key.Delete, Key.Back);
+            K("edit.airemove", Sh, Key.Delete);
             K("edit.fillfg", Al, Key.Back); K("edit.fillbg", C, Key.Back);
             K("edit.transform", C, Key.T);
             K("adj.levels", C, Key.L); K("adj.curves", C, Key.M); K("adj.huesat", C, Key.U); K("adj.colorbalance", C, Key.B);
@@ -223,7 +226,7 @@ namespace PhotoStudio
             {
                 "edit.undo" => S.History.CanUndo,
                 "edit.redo" => S.History.CanRedo,
-                "img.cropsel" or "edit.clear" or "edit.cut" or "sel.none" or "sel.feather" => S.Selection != null,
+                "img.cropsel" or "edit.clear" or "edit.airemove" or "edit.cut" or "sel.none" or "sel.feather" => S.Selection != null,
                 "layer.merge" => ActiveIndex < Doc.Layers.Count - 1,
                 "layer.delete" or "layer.mergevisible" => Doc.Layers.Count > 1,
                 "layer.up" => ActiveIndex > 0,

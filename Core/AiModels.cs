@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading;
@@ -68,8 +69,18 @@ namespace PhotoStudio.Core
             Sha256 = "ba3e0db279bdc225aff61f0dc031c5111450dd47d6c31a5813e02f928f8f6169",
         };
 
+        /// <summary>
+        /// LaMa (big-lama, Apache 2.0) exported to ONNX by Carve: rebuilds the background behind removed objects.
+        /// It runs on the processor: DirectML does not support its Fourier layers.
+        /// </summary>
+        public static readonly Model Inpaint = new Model
+        {
+            File = "lama_fp32.onnx", Size = 208044816, Gpu = false,
+            Sha256 = "1faef5301d78db7dda502fe59966957ec4b79dd64e16f03ed96913c7a4eb68d6",
+        };
+
         /// <summary>The networks that are downloaded on first use (the others are inside the application).</summary>
-        public static readonly Model[] Downloadable = { Denoise, Deblur, Subject };
+        public static readonly Model[] Downloadable = { Denoise, Deblur, Subject, Inpaint };
 
         public static string Folder => System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PhotoStudio", "Models");
@@ -178,13 +189,17 @@ namespace PhotoStudio.Core
             public float[] Run(float[] planes, int side) => Run(planes, new long[] { 1, 3, side, side }, "input", "output")[0];
 
             /// <summary>Runs the network on one input tensor and returns the outputs asked for, in order.</summary>
-            public float[][] Run(float[] data, long[] shape, string input, params string[] outputs)
+            public float[][] Run(float[] data, long[] shape, string input, params string[] outputs) =>
+                Run(new[] { (input, data, shape) }, outputs);
+
+            /// <summary>Runs the network on several input tensors and returns the outputs asked for, in order.</summary>
+            public float[][] Run((string Name, float[] Data, long[] Shape)[] inputs, params string[] outputs)
             {
                 lock (this)
                 {
                     try
                     {
-                        return RunOn(_session, data, shape, input, outputs);
+                        return RunOn(_session, inputs, outputs);
                     }
                     catch when (OnGpu)
                     {
@@ -192,19 +207,27 @@ namespace PhotoStudio.Core
                         _session.Dispose();
                         _session = cpu;
                         OnGpu = false;
-                        return RunOn(_session, data, shape, input, outputs);
+                        return RunOn(_session, inputs, outputs);
                     }
                 }
             }
 
-            static float[][] RunOn(InferenceSession session, float[] data, long[] shape, string input, string[] names)
+            static float[][] RunOn(InferenceSession session, (string Name, float[] Data, long[] Shape)[] inputs, string[] names)
             {
-                using var value = OrtValue.CreateTensorValueFromMemory(data, shape);
-                using var options = new RunOptions();
-                using var results = session.Run(options, new[] { input }, new[] { value }, names);
-                var list = new float[names.Length][];
-                for (int i = 0; i < names.Length; i++) list[i] = results[i].GetTensorDataAsSpan<float>().ToArray();
-                return list;
+                var values = new OrtValue[inputs.Length];
+                try
+                {
+                    for (int i = 0; i < inputs.Length; i++) values[i] = OrtValue.CreateTensorValueFromMemory(inputs[i].Data, inputs[i].Shape);
+                    using var options = new RunOptions();
+                    using var results = session.Run(options, inputs.Select(x => x.Name).ToArray(), values, names);
+                    var list = new float[names.Length][];
+                    for (int i = 0; i < names.Length; i++) list[i] = results[i].GetTensorDataAsSpan<float>().ToArray();
+                    return list;
+                }
+                finally
+                {
+                    foreach (var v in values) v?.Dispose();
+                }
             }
         }
     }
