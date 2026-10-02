@@ -117,6 +117,9 @@ namespace PhotoStudio.Core
                 throw new InvalidDataException(Loc.T("Il file scaricato è danneggiato (controllo SHA-256 non superato)."));
             }
             System.IO.File.Move(part, m.Path, true);
+            // The 512 × 512 LaMa of PhotoStudio 1.2.0 is replaced by this one: it would only take up space.
+            if (m == Inpaint)
+                try { System.IO.File.Delete(System.IO.Path.Combine(Folder, "lama_fp32.onnx")); } catch { }
         }
 
         static readonly Dictionary<Model, Runner> Runners = new Dictionary<Model, Runner>();
