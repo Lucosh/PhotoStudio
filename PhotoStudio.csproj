@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Anthropic" Version="12.50.0" />
+    <PackageReference Include="Anthropic" Version="12.53.0" />
     <!-- ONNX Runtime with DirectML: the AI networks run on any DirectX 12 graphics card, or on the processor. -->
     <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
     <PackageReference Include="Sdcb.LibRaw" Version="0.21.1.7" />
