@@ -60,6 +60,7 @@
                 </MenuItem>
                 <Separator/>
                 <MenuItem Header="Impostazioni AI (Gemini, Ollama, Claude)..." Tag="ai.settings" Click="Menu_Click"/>
+                <MenuItem Header="Spazio usato dall'AI..." Tag="ai.storage" Click="Menu_Click"/>
             </MenuItem>
             <MenuItem Header="_Immagine" SubmenuOpened="Menu_SubmenuOpened">
                 <MenuItem Header="Regolazioni">
@@ -91,6 +92,7 @@
                 <MenuItem Header="Colore automatico" InputGestureText="Shift+Ctrl+B" Tag="adj.autocolor" Click="Menu_Click"/>
                 <Separator/>
                 <MenuItem Header="Dimensione immagine..." InputGestureText="Alt+Ctrl+I" Tag="img.resize" Click="Menu_Click"/>
+                <MenuItem Header="✨ Ingrandimento AI 2×..." Tag="img.aiupscale" Click="Menu_Click"/>
                 <MenuItem Header="Dimensione quadro..." InputGestureText="Alt+Ctrl+C" Tag="img.canvas" Click="Menu_Click"/>
                 <MenuItem Header="Rotazione immagine">
                     <MenuItem Header="180°" Tag="img.rot180" Click="Menu_Click"/>

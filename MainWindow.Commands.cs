@@ -139,6 +139,7 @@ namespace PhotoStudio
 
             // ---- Image
             A("img.resize", ResizeImage);
+            A("img.aiupscale", AiUpscaleImage);
             A("img.canvas", CanvasSize);
             A("img.rot180", () => TransformImage(px => ImageOps.Rotate180(px, Doc.Width, Doc.Height), Doc.Width, Doc.Height, T("Ruota immagine 180°")));
             A("img.rotcw", () => TransformImage(px => ImageOps.Rotate90(px, Doc.Width, Doc.Height, true), Doc.Height, Doc.Width, T("Ruota immagine 90° orario")));
@@ -174,6 +175,7 @@ namespace PhotoStudio
             A("help.keys", ShowShortcuts, false);
             A("help.about", ShowAbout, false);
             A("help.update", () => CheckForUpdates(true), false);
+            A("ai.storage", ShowAiStorage, false);
 
             // ---- Shortcuts
             const ModifierKeys C = ModifierKeys.Control, Sh = ModifierKeys.Shift, Al = ModifierKeys.Alt, None = ModifierKeys.None;

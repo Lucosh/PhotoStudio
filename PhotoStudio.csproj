@@ -28,6 +28,10 @@
     <EmbeddedResource Include="Localization\*.json" LogicalName="PhotoStudio.Localization.%(Filename).json" />
     <!-- YuNet face detector: tells the automatic light tools where the faces are. -->
     <EmbeddedResource Include="Assets\face_detection_yunet_2023mar.onnx" LogicalName="PhotoStudio.Assets.FaceDetector.onnx" />
+    <!-- MediaPipe face landmarks: tells the culling whether the eyes are open. -->
+    <EmbeddedResource Include="Assets\face_landmarks_mediapipe.onnx" LogicalName="PhotoStudio.Assets.FaceLandmarks.onnx" />
+    <!-- Real-ESRGAN (small general model): the AI enlargement. -->
+    <EmbeddedResource Include="Assets\realesr-general-x4v3.onnx" LogicalName="PhotoStudio.Assets.Upscaler.onnx" />
   </ItemGroup>
 
   <ItemGroup>

@@ -29,7 +29,7 @@ namespace PhotoStudio.Dialogs
             area.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(96) });
             area.ColumnDefinitions.Add(new ColumnDefinition());
             area.Children.Add(new TextBlock { Text = T("Zona"), VerticalAlignment = VerticalAlignment.Center });
-            _refocusArea = new ComboBox { ItemsSource = new[] { T("Soggetto (visi e persone, o il centro)"), T("Tutta la foto") }, Focusable = false };
+            _refocusArea = new ComboBox { ItemsSource = new[] { T("Soggetto (trovato in automatico)"), T("Tutta la foto") }, Focusable = false };
             _refocusArea.SelectionChanged += (s, e) =>
             {
                 if (_loading || _refocusArea.SelectedIndex < 0) return;
@@ -70,16 +70,21 @@ namespace PhotoStudio.Dialogs
         async void EnsureModel(AiModels.Model model, Action<RawSettings> off)
         {
             if (model.Installed || _downloading) return;
-            void TurnOff()
-            {
-                off(_s);
-                RefreshSliders();
-                Schedule();
-            }
+            if (await EnsureModelAsync(model)) { Schedule(); return; }
+            off(_s);
+            RefreshSliders();
+            Schedule();
+        }
+
+        /// <summary>True when the network is installed, after downloading it if the user agrees.</summary>
+        async System.Threading.Tasks.Task<bool> EnsureModelAsync(AiModels.Model model)
+        {
+            if (model.Installed) return true;
+            if (_downloading) return false;
             var answer = MessageBox.Show(this,
                 T("Questo strumento usa una rete neurale che va scaricata una sola volta ({0:0} MB) da GitHub.\nPoi funziona senza internet e senza inviare le foto.\n\nScaricarla adesso?", model.Size / 1048576.0),
                 "Camera Raw", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (answer != MessageBoxResult.Yes) { TurnOff(); return; }
+            if (answer != MessageBoxResult.Yes) return false;
 
             _downloading = true;
             _downloadCts = new CancellationTokenSource();
@@ -87,17 +92,17 @@ namespace PhotoStudio.Dialogs
             try
             {
                 await AiModels.DownloadAsync(model, progress, _downloadCts.Token);
-                if (_closed) return;
+                if (_closed) return false;
                 _status.Text = T("Modello AI installato.");
-                Schedule();
+                return true;
             }
             catch (Exception ex)
             {
-                if (_closed) return;
+                if (_closed) return false;
                 _status.Text = "";
                 if (!(ex is OperationCanceledException))
                     MessageBox.Show(this, T("Download non riuscito:\n{0}", ex.Message), "Camera Raw", MessageBoxButton.OK, MessageBoxImage.Warning);
-                TurnOff();
+                return false;
             }
             finally
             {

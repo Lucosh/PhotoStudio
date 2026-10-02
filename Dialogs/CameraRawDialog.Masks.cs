@@ -27,7 +27,8 @@ namespace PhotoStudio.Dialogs
         ListBox _maskList;
         StackPanel _maskEditor, _zonePanel, _linearPanel, _radialPanel, _skyPanel;
         CheckBox _maskEnabled, _maskShow, _maskInvert, _skyInvert;
-        TextBlock _maskTitle;
+        TextBlock _maskTitle, _skyHint;
+        static string SkyHintText => T("Il cielo è riconosciuto nella foto e la maschera ne segue il profilo (tetti, montagne, rami): non c'è niente da spostare. Attiva \"Mostra in rosso la zona modificata\" per vedere dove agisce.");
         RangeBar _rangeBar;
         readonly Button[] _zoneButtons = new Button[5];
         bool _picking, _maskFlash, _maskListLoading;
@@ -71,8 +72,10 @@ namespace PhotoStudio.Dialogs
                 () => SceneAnalysis.Of(_preview).Sky != null
                     ? new LocalMask { Name = T("Cielo"), Kind = MaskKind.Sky, Exposure = -0.4, Saturation = 20, Contrast = 10, Temperature = -5 }
                     : new LocalMask { Name = T("Cielo"), Kind = MaskKind.Linear, X1 = (_s.CropL + _s.CropR) / 2, Y1 = _s.CropT, X2 = (_s.CropL + _s.CropR) / 2, Y2 = _s.CropT + (_s.CropB - _s.CropT) * 0.45, Exposure = -0.4, Saturation = 20, Contrast = 10, Temperature = -5 });
-            Recipe(T("◎ Luce sul soggetto"), T("Un alone di luce al centro che attira lo sguardo"),
-                () => new LocalMask { Name = T("Soggetto"), Kind = MaskKind.Radial, X1 = (_s.CropL + _s.CropR) / 2, Y1 = (_s.CropT + _s.CropB) / 2, RX = 0.28 * (_s.CropR - _s.CropL), RY = 0.34 * (_s.CropB - _s.CropT), Feather = 0.7, Exposure = 0.35, Clarity = 8 });
+            Recipe(T("◎ Luce sul soggetto"), T("Più luce sul soggetto: con la rete AI ne segue il contorno, altrimenti è un alone al centro"),
+                () => AiModels.Subject.Installed
+                    ? new LocalMask { Name = T("Soggetto"), Kind = MaskKind.Subject, Exposure = 0.35, Clarity = 8 }
+                    : new LocalMask { Name = T("Soggetto"), Kind = MaskKind.Radial, X1 = (_s.CropL + _s.CropR) / 2, Y1 = (_s.CropT + _s.CropB) / 2, RX = 0.28 * (_s.CropR - _s.CropL), RY = 0.34 * (_s.CropB - _s.CropT), Feather = 0.7, Exposure = 0.35, Clarity = 8 });
             Recipe(T("❄ Ombre più fredde"), T("Ombre bluastre: look cinematografico"),
                 () => new LocalMask { Name = T("Ombre fredde"), Kind = MaskKind.Luminance, Low = 0, High = 0.35, Feather = 0.15, Temperature = -25, Saturation = 5 });
             Recipe(T("▣ Bordi più scuri"), T("Scurisce i bordi e lascia luminoso il centro"),
@@ -80,7 +83,7 @@ namespace PhotoStudio.Dialogs
             p.Children.Add(recipes);
 
             Section(p, T("CREA UNA MASCHERA"));
-            var add = new UniformGrid { Rows = 1 };
+            var add = new UniformGrid { Columns = 2 };
             void Add(string name, string tip, MaskKind kind)
             {
                 var b = new Button { Content = name, Padding = new Thickness(4, 5, 4, 5), Margin = new Thickness(0, 0, 4, 0), ToolTip = tip };
@@ -95,6 +98,27 @@ namespace PhotoStudio.Dialogs
             Add(T("+ Zona di luce"), T("Seleziona le zone per luminosità: solo le ombre, solo le luci..."), MaskKind.Luminance);
             Add(T("+ Lineare"), T("Sfumatura a partire da un lato: ideale per il cielo o il terreno"), MaskKind.Linear);
             Add(T("+ Radiale"), T("Cerchio o ellisse sfumati: un viso, un soggetto, un punto di luce"), MaskKind.Radial);
+            var subject = new Button
+            {
+                Content = T("+ Soggetto AI"), Padding = new Thickness(4, 5, 4, 5), Margin = new Thickness(0, 4, 4, 0),
+                ToolTip = T("La rete AI trova il soggetto (una persona, un animale, un oggetto) e la maschera ne segue il contorno"),
+            };
+            subject.Click += async (s, e) =>
+            {
+                if (!await EnsureModelAsync(AiModels.Subject)) return;
+                _status.Text = T("Ricerca del soggetto...");
+                var found = await System.Threading.Tasks.Task.Run(() => SceneAnalysis.SubjectOf(_preview));
+                if (_closed) return;
+                if (found == null)
+                {
+                    _status.Text = T("Nessun soggetto riconosciuto in questa foto: usa una maschera radiale.");
+                    return;
+                }
+                int n = _s.Masks.Count(m => m.Kind == MaskKind.Subject) + 1;
+                AddMask(new LocalMask { Name = n == 1 ? T("Soggetto") : T("Soggetto {0}", n), Kind = MaskKind.Subject },
+                        T("Maschera del soggetto creata: segue il contorno trovato dalla rete AI. Scegli qui sotto cosa cambiare."));
+            };
+            add.Children.Add(subject);
             p.Children.Add(add);
 
             Section(p, T("LE TUE MASCHERE"));
@@ -231,7 +255,8 @@ namespace PhotoStudio.Dialogs
             _maskEditor.Children.Add(_radialPanel);
 
             _skyPanel = new StackPanel();
-            _skyPanel.Children.Add(Hint(T("Il cielo è riconosciuto nella foto e la maschera ne segue il profilo (tetti, montagne, rami): non c'è niente da spostare. Attiva \"Mostra in rosso la zona modificata\" per vedere dove agisce.")));
+            _skyHint = Hint(SkyHintText);
+            _skyPanel.Children.Add(_skyHint);
             _skyInvert = new CheckBox { Content = T("Modifica tutto tranne il cielo (inverti)"), Margin = new Thickness(0, 4, 0, 0) };
             _skyInvert.Click += (s, e) =>
             {
@@ -321,7 +346,7 @@ namespace PhotoStudio.Dialogs
         {
             _maskListLoading = true;
             _maskList.ItemsSource = _s.Masks.Select(m =>
-                $"{(m.Enabled ? "●" : "○")}  {m.Name}   —   {m.Kind switch { MaskKind.Luminance => T("zona di luce"), MaskKind.Linear => T("lineare"), MaskKind.Sky => T("cielo"), _ => T("radiale") }}").ToList();
+                $"{(m.Enabled ? "●" : "○")}  {m.Name}   —   {m.Kind switch { MaskKind.Luminance => T("zona di luce"), MaskKind.Linear => T("lineare"), MaskKind.Sky => T("cielo"), MaskKind.Subject => T("soggetto AI"), _ => T("radiale") }}").ToList();
             _maskList.SelectedIndex = _maskIndex;
             _maskListLoading = false;
         }
@@ -337,7 +362,11 @@ namespace PhotoStudio.Dialogs
             _zonePanel.Visibility = m.Kind == MaskKind.Luminance ? Visibility.Visible : Visibility.Collapsed;
             _linearPanel.Visibility = m.Kind == MaskKind.Linear ? Visibility.Visible : Visibility.Collapsed;
             _radialPanel.Visibility = m.Kind == MaskKind.Radial ? Visibility.Visible : Visibility.Collapsed;
-            _skyPanel.Visibility = m.Kind == MaskKind.Sky ? Visibility.Visible : Visibility.Collapsed;
+            _skyPanel.Visibility = m.Kind is MaskKind.Sky or MaskKind.Subject ? Visibility.Visible : Visibility.Collapsed;
+            _skyHint.Text = m.Kind == MaskKind.Subject
+                ? T("Il soggetto è trovato dalla rete AI e la maschera ne segue il contorno: non c'è niente da spostare. Attiva \"Mostra in rosso la zona modificata\" per vedere dove agisce.")
+                : SkyHintText;
+            _skyInvert.Content = m.Kind == MaskKind.Subject ? T("Modifica tutto tranne il soggetto (inverti)") : T("Modifica tutto tranne il cielo (inverti)");
             RefreshSliders();
             UpdateZoneUi();
             UpdateOverlay();
@@ -370,7 +399,7 @@ namespace PhotoStudio.Dialogs
                 return;
             }
             var m = SelMask(_s);
-            if (m == null || m.Kind is MaskKind.Luminance or MaskKind.Sky) return;   // nothing to drag
+            if (m == null || m.Kind is MaskKind.Luminance or MaskKind.Sky or MaskKind.Subject) return;   // nothing to drag
             var white = Brushes.White;
             var shadow = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0));
             void Handle(Point c, bool filled, bool square = false)

@@ -43,6 +43,9 @@ namespace PhotoStudio.Dialogs
             <Border x:Name='Burst' HorizontalAlignment='Left' VerticalAlignment='Top' Margin='4' Padding='5,1,5,2' CornerRadius='2' Background='#D0101010'>
                 <TextBlock Text='{Binding BurstText}' FontSize='10' Foreground='#FFDDDDDD'/>
             </Border>
+            <Border x:Name='Quality' HorizontalAlignment='Right' VerticalAlignment='Top' Margin='4' Padding='5,1,5,2' CornerRadius='2' Background='#D0101010'>
+                <TextBlock Text='{Binding QualityText}' FontSize='10' Foreground='#FFF2C94C'/>
+            </Border>
         </Grid>
         <Border Height='3' Background='{Binding LabelBrush}'/>
         <DockPanel Margin='2,4,2,0'>
@@ -54,6 +57,9 @@ namespace PhotoStudio.Dialogs
     <DataTemplate.Triggers>
         <DataTrigger Binding='{Binding BurstText}' Value=''>
             <Setter TargetName='Burst' Property='Visibility' Value='Collapsed'/>
+        </DataTrigger>
+        <DataTrigger Binding='{Binding QualityText}' Value=''>
+            <Setter TargetName='Quality' Property='Visibility' Value='Collapsed'/>
         </DataTrigger>
     </DataTemplate.Triggers>
 </DataTemplate>";
@@ -85,7 +91,8 @@ namespace PhotoStudio.Dialogs
         readonly Polygon _hR = new Polygon { Fill = new SolidColorBrush(Color.FromArgb(0x90, 0xE0, 0x45, 0x3E)) };
         readonly Polygon _hG = new Polygon { Fill = new SolidColorBrush(Color.FromArgb(0x90, 0x40, 0xC0, 0x50)) };
         readonly Polygon _hB = new Polygon { Fill = new SolidColorBrush(Color.FromArgb(0x90, 0x4A, 0x7F, 0xE8)) };
-        readonly ComboBox _ratingFilter, _labelFilter;
+        readonly ComboBox _ratingFilter, _labelFilter, _qualityFilter;
+        readonly QualityLoader _quality;
         readonly Button _compareButton;
         readonly Grid _overlay;
         readonly TextBox _output;
@@ -118,6 +125,8 @@ namespace PhotoStudio.Dialogs
             _all = photos.ToList();
             _items = new ObservableCollection<PhotoItem>(_all);
             _thumbs = new ThumbnailLoader(_items);
+            _quality = new QualityLoader(_all);
+            _quality.Checked += item => { if (item == Current) UpdateInfo(item); };
 
             Title = T("Preselezione — {0}", folder);
             Width = 1400;
@@ -170,10 +179,18 @@ namespace PhotoStudio.Dialogs
                 ItemsSource = new[] { T("Tutti i colori"), T("Rosso"), T("Giallo"), T("Verde"), T("Blu"), T("Viola"), T("Senza colore") },
                 ToolTip = T("Mostra solo le foto con questa etichetta colore (6 rosso, 7 giallo, 8 verde, 9 blu)"),
             };
+            _qualityFilter = new ComboBox
+            {
+                Width = 150, Focusable = false, SelectedIndex = 0, Margin = new Thickness(6, 0, 0, 0),
+                ItemsSource = new[] { T("Tutte le foto"), T("Da controllare"), T("Senza problemi"), T("Una per raffica") },
+                ToolTip = T("Controllo automatico, sul tuo PC: \"Da controllare\" sono le foto mosse o sfocate e quelle con qualcuno a occhi chiusi;\n\"Una per raffica\" lascia lo scatto migliore di ogni raffica e le foto singole senza problemi"),
+            };
             _ratingFilter.SelectionChanged += (s, e) => RebuildView(null);
             _labelFilter.SelectionChanged += (s, e) => RebuildView(null);
+            _qualityFilter.SelectionChanged += (s, e) => RebuildView(null);
             filters.Children.Add(_ratingFilter);
             filters.Children.Add(_labelFilter);
+            filters.Children.Add(_qualityFilter);
             _compareButton = new Button { Content = T("Confronta"), Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(12, 0, 0, 0), Focusable = false, ToolTip = T("Foto affiancate: 1 → 2 → 4 (C). Con B confronti la raffica.") };
             _compareButton.Click += (s, e) => CycleCompare();
             filters.Children.Add(_compareButton);
@@ -331,7 +348,7 @@ namespace PhotoStudio.Dialogs
             Content = root;
             PreviewKeyDown += OnKey;
             Closing += OnClosing;
-            Closed += (s, e) => { _closed = true; _thumbs.Stop(); _metaCts.Cancel(); };
+            Closed += (s, e) => { _closed = true; _thumbs.Stop(); _quality.Stop(); _metaCts.Cancel(); };
             Loaded += (s, e) =>
             {
                 var dpi = VisualTreeHelper.GetDpi(this);
@@ -341,6 +358,8 @@ namespace PhotoStudio.Dialogs
                 if (last != null) _index = _items.IndexOf(last);
                 _thumbs.Focus = _index;
                 _thumbs.Kick();
+                _quality.Focus = Math.Max(0, _all.IndexOf(Current));
+                _quality.Kick();
                 ShowCurrent();
                 if (last != null && _index > 0) Toast(T("Riprendi da dove eri rimasto: {0}", last.Name));
                 LoadAllMetadata();
@@ -353,11 +372,18 @@ namespace PhotoStudio.Dialogs
 
         // ================= Filter =================
 
-        bool FilterActive => _ratingFilter.SelectedIndex > 0 || _labelFilter.SelectedIndex > 0;
+        bool FilterActive => _ratingFilter.SelectedIndex > 0 || _labelFilter.SelectedIndex > 0 || _qualityFilter.SelectedIndex > 0;
 
         bool Passes(PhotoItem p)
         {
             if (p.Rating < _ratingFilter.SelectedIndex) return false;
+            var q = p.Quality;
+            switch (_qualityFilter.SelectedIndex)
+            {
+                case 1 when q == null || !q.HasProblem: return false;
+                case 2 when q == null || q.HasProblem: return false;
+                case 3 when q == null || q.HasProblem || (p.BurstCount > 1 && !q.Best): return false;
+            }
             int l = _labelFilter.SelectedIndex;
             if (l == 0) return true;
             return l == 6 ? p.Label == PhotoLabel.None : p.Label == (PhotoLabel)l;
@@ -368,6 +394,7 @@ namespace PhotoStudio.Dialogs
             var parts = new List<string>();
             if (_ratingFilter.SelectedIndex > 0) parts.Add((string)_ratingFilter.SelectedItem);
             if (_labelFilter.SelectedIndex > 0) parts.Add(T("etichetta {0}", InSentence((string)_labelFilter.SelectedItem)));
+            if (_qualityFilter.SelectedIndex > 0) parts.Add(InSentence((string)_qualityFilter.SelectedItem));
             return string.Join(", ", parts);
         }
 
@@ -508,6 +535,7 @@ namespace PhotoStudio.Dialogs
             _syncing = false;
             _list.ScrollIntoView(item);
             _thumbs.Focus = _index;
+            _quality.Focus = Math.Max(0, _all.IndexOf(item));
             if (_zoom) CaptureAnchor();
 
             int n = Math.Max(1, Math.Min(_paneCount, _items.Count));
@@ -544,6 +572,8 @@ namespace PhotoStudio.Dialogs
             _labelDot.Visibility = item.Label == PhotoLabel.None ? Visibility.Collapsed : Visibility.Visible;
             var parts = new List<string> { item.Badge, T("{0} di {1}", _index + 1, _items.Count) };
             if (item.BurstCount > 1) parts.Add(T("raffica: foto {0} di {1}", item.BurstIndex, item.BurstCount));
+            if (item.Quality is ShotQuality q)
+                parts.Add(q.ClosedEyes > 0 ? T("occhi chiusi") : q.Blurry ? T("poco nitida") : q.Best ? T("la più nitida della raffica") : T("nitida"));
             _fileInfo.Text = string.Join("   ·   ", parts);
             _exifInfo.Text = item.Metadata?.Summary() ?? "";
             _exifInfo.Visibility = _exifInfo.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -867,6 +897,7 @@ namespace PhotoStudio.Dialogs
             if (_closed) return;
             foreach (var kv in results) SetMetadata(kv.Key, kv.Value);
             PhotoLibrary.MarkBursts(_all);
+            _quality.Rank();
             _burstsReady = true;
             if (Current != null) UpdateInfo(Current);
         }
@@ -1034,7 +1065,7 @@ namespace PhotoStudio.Dialogs
             _items.RemoveAt(index);
             _syncing = false;
             _index = Math.Min(index, _items.Count - 1);
-            if (_burstsReady) PhotoLibrary.MarkBursts(_all);
+            if (_burstsReady) { PhotoLibrary.MarkBursts(_all); _quality.Rank(); }
             ShowCurrent();
             string files = item.Files.Count > 1 ? $" ({item.Badge})" : "";
             Toast(T("{0}{1} spostata nel Cestino.   Ctrl+Z per ripristinarla", item.Name, files));
@@ -1060,7 +1091,7 @@ namespace PhotoStudio.Dialogs
             _deleted.Pop();
             _deletedCount--;
             _all.Insert(Math.Clamp(index, 0, _all.Count), item);
-            if (_burstsReady) PhotoLibrary.MarkBursts(_all);
+            if (_burstsReady) { PhotoLibrary.MarkBursts(_all); _quality.Rank(); }
             RebuildView(item);
             Toast(failed.Count == 0 ? $"{item.Name} ripristinata." : T("{0} ripristinata solo in parte: recupera {1} dal Cestino.", item.Name, Path.GetFileName(failed[0])));
         }

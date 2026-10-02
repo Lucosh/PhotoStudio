@@ -22,9 +22,13 @@ namespace PhotoStudio.Core
             public string File { get; init; }
             public string Sha256 { get; init; }
             public long Size { get; init; }
+            /// <summary>Set for the small networks embedded in the application: they are always installed.</summary>
+            public string Resource { get; init; }
+            /// <summary>False for a network so small that the processor runs it faster than the graphics card.</summary>
+            public bool Gpu { get; init; } = true;
             public string Url => BaseUrl + File;
             public string Path => System.IO.Path.Combine(Folder, File);
-            public bool Installed => System.IO.File.Exists(Path);
+            public bool Installed => Resource != null || System.IO.File.Exists(Path);
         }
 
         const string BaseUrl = "https://github.com/Lucosh/PhotoStudio/releases/download/models-1/";
@@ -42,6 +46,30 @@ namespace PhotoStudio.Core
             File = "nafnet-gopro32.onnx", Size = 68898598,
             Sha256 = "3c205a807efe00fda45b9d382070ccfcb1f4cec195629a288ba7cc887bf37b99",
         };
+
+        /// <summary>IS-Net (DIS, Apache 2.0) general use: the main subject of a photo, for the AI subject masks.</summary>
+        public static readonly Model Subject = new Model
+        {
+            File = "isnet-general-use.onnx", Size = 178648008,
+            Sha256 = "60920e99c45464f2ba57bee2ad08c919a52bbf852739e96947fbb4358c0d964a",
+        };
+
+        /// <summary>MediaPipe face landmarks (Apache 2.0), embedded: the eyelids, for the closed-eyes check of the culling.</summary>
+        public static readonly Model FaceLandmarks = new Model
+        {
+            File = "face_landmarks_mediapipe.onnx", Resource = "PhotoStudio.Assets.FaceLandmarks.onnx", Gpu = false,
+            Sha256 = "7d6e82dee82a1dca5fbddb282b3cc74571833a530de317fc22ae325c3358beeb",
+        };
+
+        /// <summary>Real-ESRGAN realesr-general-x4v3 (BSD-3), embedded: the AI enlargement.</summary>
+        public static readonly Model Upscaler = new Model
+        {
+            File = "realesr-general-x4v3.onnx", Resource = "PhotoStudio.Assets.Upscaler.onnx",
+            Sha256 = "ba3e0db279bdc225aff61f0dc031c5111450dd47d6c31a5813e02f928f8f6169",
+        };
+
+        /// <summary>The networks that are downloaded on first use (the others are inside the application).</summary>
+        public static readonly Model[] Downloadable = { Denoise, Deblur, Subject };
 
         public static string Folder => System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PhotoStudio", "Models");
@@ -89,7 +117,7 @@ namespace PhotoStudio.Core
             {
                 if (Runners.TryGetValue(m, out var r)) return r;
                 if (!m.Installed) return null;
-                r = Runner.Create(m.Path);
+                r = Runner.Create(m);
                 if (r != null) Runners[m] = r;
                 return r;
             }
@@ -98,21 +126,21 @@ namespace PhotoStudio.Core
         /// <summary>One network, on the graphics card if possible; if the card fails it moves to the processor for good.</summary>
         internal sealed class Runner
         {
-            readonly string _path;
+            readonly Model _model;
             InferenceSession _session;
             public bool OnGpu { get; private set; }
 
-            Runner(string path, InferenceSession session, bool gpu) { _path = path; _session = session; OnGpu = gpu; }
+            Runner(Model model, InferenceSession session, bool gpu) { _model = model; _session = session; OnGpu = gpu; }
 
-            public static Runner Create(string path)
+            public static Runner Create(Model m)
             {
-                var gpu = Open(path, true);
-                if (gpu != null) return new Runner(path, gpu, true);
-                var cpu = Open(path, false);
-                return cpu != null ? new Runner(path, cpu, false) : null;
+                var gpu = m.Gpu ? Open(m, true) : null;
+                if (gpu != null) return new Runner(m, gpu, true);
+                var cpu = Open(m, false);
+                return cpu != null ? new Runner(m, cpu, false) : null;
             }
 
-            static InferenceSession Open(string path, bool gpu)
+            static InferenceSession Open(Model m, bool gpu)
             {
                 SessionOptions options = null;
                 try
@@ -129,7 +157,12 @@ namespace PhotoStudio.Core
                         options.ExecutionMode = ExecutionMode.ORT_SEQUENTIAL;
                         options.AppendExecutionProvider_DML(0);
                     }
-                    return new InferenceSession(path, options);
+                    if (m.Resource == null) return new InferenceSession(m.Path, options);
+                    using var stream = typeof(AiModels).Assembly.GetManifestResourceStream(m.Resource);
+                    if (stream == null) return null;
+                    var bytes = new byte[stream.Length];
+                    stream.ReadExactly(bytes);
+                    return new InferenceSession(bytes, options);
                 }
                 catch
                 {
@@ -142,32 +175,36 @@ namespace PhotoStudio.Core
             }
 
             /// <summary>Runs one 1 × 3 × side × side tile (RGB planes, 0..1) and returns the output planes.</summary>
-            public float[] Run(float[] planes, int side)
+            public float[] Run(float[] planes, int side) => Run(planes, new long[] { 1, 3, side, side }, "input", "output")[0];
+
+            /// <summary>Runs the network on one input tensor and returns the outputs asked for, in order.</summary>
+            public float[][] Run(float[] data, long[] shape, string input, params string[] outputs)
             {
                 lock (this)
                 {
                     try
                     {
-                        return RunOn(_session, planes, side);
+                        return RunOn(_session, data, shape, input, outputs);
                     }
                     catch when (OnGpu)
                     {
-                        var cpu = Open(_path, false) ?? throw new InvalidOperationException("ONNX Runtime");
+                        var cpu = Open(_model, false) ?? throw new InvalidOperationException("ONNX Runtime");
                         _session.Dispose();
                         _session = cpu;
                         OnGpu = false;
-                        return RunOn(_session, planes, side);
+                        return RunOn(_session, data, shape, input, outputs);
                     }
                 }
             }
 
-            static float[] RunOn(InferenceSession session, float[] planes, int side)
+            static float[][] RunOn(InferenceSession session, float[] data, long[] shape, string input, string[] names)
             {
-                var shape = new long[] { 1, 3, side, side };
-                using var input = OrtValue.CreateTensorValueFromMemory(planes, shape);
+                using var value = OrtValue.CreateTensorValueFromMemory(data, shape);
                 using var options = new RunOptions();
-                using var outputs = session.Run(options, new[] { "input" }, new[] { input }, new[] { "output" });
-                return outputs[0].GetTensorDataAsSpan<float>().ToArray();
+                using var results = session.Run(options, new[] { input }, new[] { value }, names);
+                var list = new float[names.Length][];
+                for (int i = 0; i < names.Length; i++) list[i] = results[i].GetTensorDataAsSpan<float>().ToArray();
+                return list;
             }
         }
     }

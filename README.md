@@ -39,6 +39,7 @@ Sort a whole shoot, develop your RAW files and retouch them, with optional AI he
 - Star ratings and color labels, with filters to show only the photos you want.
 - Bursts are grouped automatically, so you can pick the best shot quickly.
 - Compare photos side by side with synchronized zoom.
+- An automatic check flags blurred shots and people with their eyes closed, and picks the best shot of each burst.
 - Shooting data (camera, lens, ISO, shutter speed, aperture) and a histogram with clipping warnings.
 - Your work is saved: reopen the folder and carry on where you left off.
 
@@ -49,6 +50,7 @@ Sort a whole shoot, develop your RAW files and retouch them, with optional AI he
 - Tone curve (RGB and per channel), HSL color mixer and color grading wheels.
 - Sharpening, noise reduction, vignette, grain, crop and straighten.
 - Local masks (linear, radial and by brightness), a before/after view, presets, and copy/paste of settings.
+- **AI subject masks**: the mask follows the outline of the person, animal or object, found by a network on your PC.
 - **AI noise reduction** and **AI refocus** (on the subject or on the whole photo), with neural networks that run on your PC, on the graphics card when possible. The networks (about 70 and 115 MB) are downloaded from this project's releases the first time you use them.
 
 ### ☀️ Smart light, made easy
@@ -66,6 +68,7 @@ Sort a whole shoot, develop your RAW files and retouch them, with optional AI he
 
 - Layers, selections, brush, adjustments (levels, curves, hue/saturation, black and white…) and filters (blur, sharpen, noise, vignette…).
 - `.psx` project format, which keeps your layers.
+- **AI enlargement 2×** (Image menu), which rebuilds the detail instead of just stretching the pixels.
 - Apply settings or presets to many photos at once.
 - Export with resizing, automatic renaming and a watermark.
 

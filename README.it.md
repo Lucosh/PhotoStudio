@@ -39,6 +39,7 @@ Scegli le foto migliori di un servizio, sviluppa i RAW e ritocca, con l'aiuto fa
 - Stelle ed etichette colorate, con filtri per vedere solo le foto che ti interessano.
 - Le raffiche vengono raggruppate da sole, così trovi subito lo scatto migliore.
 - Confronto affiancato con zoom sincronizzato.
+- Un controllo automatico segnala le foto mosse o sfocate e le persone con gli occhi chiusi, e sceglie lo scatto migliore di ogni raffica.
 - Dati di scatto (fotocamera, obiettivo, ISO, tempo, diaframma) e istogramma con avviso di bruciature.
 - Il lavoro viene salvato: riapri la cartella e riprendi da dove eri rimasto.
 
@@ -49,6 +50,7 @@ Scegli le foto migliori di un servizio, sviluppa i RAW e ritocca, con l'aiuto fa
 - Curva di tono (RGB e per canale), mix colori HSL e ruote di color grading.
 - Nitidezza, riduzione del rumore, vignettatura, grana, ritaglio e raddrizzamento.
 - Maschere locali (lineari, radiali e per luminosità), vista prima/dopo, preset e copia/incolla delle impostazioni.
+- **Maschere AI del soggetto**: la maschera segue il contorno della persona, dell'animale o dell'oggetto, trovato da una rete sul tuo PC.
 - **Riduzione rumore AI** e **rimessa a fuoco AI** (sul soggetto o su tutta la foto), con reti neurali che girano sul tuo PC, sulla scheda video quando possibile. Le reti (circa 70 e 115 MB) si scaricano dalle release di questo progetto la prima volta che le usi.
 
 ### ☀️ Luce intelligente, anche per principianti
@@ -66,6 +68,7 @@ Scegli le foto migliori di un servizio, sviluppa i RAW e ritocca, con l'aiuto fa
 
 - Livelli, selezioni, pennello, regolazioni (livelli, curve, tonalità/saturazione, bianco e nero…) e filtri (sfocatura, nitidezza, disturbo, vignettatura…).
 - Formato di progetto `.psx`, che conserva i livelli.
+- **Ingrandimento AI 2×** (menu Immagine), che ricostruisce i dettagli invece di allargare solo i pixel.
 - Applica impostazioni o preset a molte foto insieme.
 - Esportazione con ridimensionamento, rinomina automatica e filigrana.
 

@@ -29,6 +29,12 @@ namespace PhotoStudio.Core
 
         public static SceneAnalysis Of(RawImage img) => img.Scene.Get(img);
 
+        /// <summary>
+        /// The subject found by the AI network, or null when it is not installed (it is asked only when a tool needs
+        /// it, as it is slower than the rest of the analysis).
+        /// </summary>
+        public static SubjectMap SubjectOf(RawImage img) => img.Scene.Subject(img);
+
         internal static SceneAnalysis Build(RawImage img)
         {
             // Neither search may stop the development of a photo: without a result the tools fall back to the tones alone.
@@ -53,6 +59,22 @@ namespace PhotoStudio.Core
         public SceneAnalysis Get(RawImage img)
         {
             lock (this) return _value ??= SceneAnalysis.Build(img);
+        }
+
+        SubjectMap _subject;
+        bool _subjectDone;
+        readonly object _subjectLock = new object();
+
+        public SubjectMap Subject(RawImage img)
+        {
+            lock (_subjectLock)
+            {
+                // Without the network nothing is remembered: once it is downloaded the subject is found.
+                if (_subjectDone || !AiModels.Subject.Installed) return _subject;
+                try { _subject = SubjectMap.Detect(img); } catch { _subject = null; }
+                _subjectDone = true;
+                return _subject;
+            }
         }
     }
 

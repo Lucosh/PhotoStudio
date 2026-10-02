@@ -30,6 +30,7 @@ namespace PhotoStudio.Core
         int _rating, _burstIndex, _burstCount;
         PhotoLabel _label;
         PhotoMetadata _metadata;
+        ShotQuality _quality;
 
         public PhotoItem(string name, IEnumerable<string> files)
         {
@@ -77,6 +78,17 @@ namespace PhotoStudio.Core
             _burstCount = count;
             Raise(nameof(BurstText));
         }
+
+        // ---- automatic check (see ShotCheck)
+        /// <summary>Sharpness and closed eyes; null until the background check reaches this photo.</summary>
+        public ShotQuality Quality { get => _quality; internal set { _quality = value; RaiseQuality(); } }
+        internal bool QualityRequested { get; set; }
+        internal void RaiseQuality() { Raise(nameof(Quality)); Raise(nameof(QualityText)); }
+        public string QualityText => _quality == null ? ""
+            : _quality.ClosedEyes > 0 ? T("◡ occhi chiusi")
+            : _quality.Blurry ? T("≋ poco nitida")
+            : _quality.Best ? T("✓ la migliore")
+            : "";
 
         /// <summary>Development settings to use for this photo (copied, from a preset, or from its last Camera Raw edit).</summary>
         public RawSettings Settings { get; set; }
@@ -585,6 +597,77 @@ namespace PhotoStudio.Core
             File.Move(data, originalPath);
             try { File.Delete(bestInfo); } catch { }
             return true;
+        }
+    }
+
+    /// <summary>
+    /// Checks every photo in the background (sharpness, closed eyes), nearest to the photo being viewed first, and
+    /// marks the best shot of each burst. Create and use it on the UI thread: results are assigned there.
+    /// </summary>
+    public sealed class QualityLoader
+    {
+        readonly IList<PhotoItem> _items;
+        readonly CancellationTokenSource _cts = new CancellationTokenSource();
+        bool _running;
+
+        public QualityLoader(IList<PhotoItem> items) => _items = items;
+
+        /// <summary>Index in the list given to the constructor of the photo being viewed.</summary>
+        public int Focus { get; set; }
+        /// <summary>Raised on the UI thread after each photo checked.</summary>
+        public event Action<PhotoItem> Checked;
+
+        public void Kick()
+        {
+            if (_running || _cts.IsCancellationRequested) return;
+            _running = true;
+            Work();
+        }
+
+        public void Stop() => _cts.Cancel();
+
+        async void Work()
+        {
+            try
+            {
+                while (!_cts.IsCancellationRequested)
+                {
+                    var next = Pick();
+                    if (next == null) break;
+                    next.QualityRequested = true;
+                    ShotQuality q = null;
+                    try { q = await Task.Run(() => ShotCheck.Assess(next.PreviewPath)); }
+                    catch { }
+                    if (q == null || _cts.IsCancellationRequested) continue;
+                    next.Quality = q;
+                    Rank(next.BurstId);
+                    Checked?.Invoke(next);
+                }
+            }
+            finally
+            {
+                _running = false;
+            }
+        }
+
+        /// <summary>Ranks the shots again; burst 0 = all of them (after the bursts have been found or changed).</summary>
+        public void Rank(int burst = 0)
+        {
+            var shots = _items.Where(p => p.Quality != null).Select(p => (p.Quality, p.BurstId)).ToList();
+            ShotCheck.Rank(shots);
+            foreach (var p in _items)
+                if (p.Quality != null && (burst == 0 || p.BurstId == burst)) p.RaiseQuality();
+        }
+
+        PhotoItem Pick()
+        {
+            int n = _items.Count, f = Math.Clamp(Focus, 0, Math.Max(0, n - 1));
+            for (int d = 0; d < n; d++)
+            {
+                if (f + d < n && !_items[f + d].QualityRequested) return _items[f + d];
+                if (d > 0 && f - d >= 0 && !_items[f - d].QualityRequested) return _items[f - d];
+            }
+            return null;
         }
     }
 

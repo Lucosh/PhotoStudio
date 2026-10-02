@@ -204,9 +204,11 @@ namespace PhotoStudio.Core
         sealed class Subject
         {
             public (float Cx, float Cy, float Rx, float Ry)[] Ellipses;
+            public SubjectMap Map;
 
             public float Weight(float x, float y)
             {
+                if (Map != null) return Map.At(x, y);
                 float best = 0;
                 foreach (var e in Ellipses)
                 {
@@ -220,11 +222,14 @@ namespace PhotoStudio.Core
         }
 
         /// <summary>
-        /// The subject: each face with the body under it, or, in a photo without people, the middle of the frame.
-        /// The coordinates are fractions of the frame, so the mask is the same at every size of the image.
+        /// The subject: its outline when the AI subject network is installed; otherwise each face with the body under
+        /// it, or, in a photo without people, the middle of the frame. The coordinates are fractions of the frame, so
+        /// the mask is the same at every size of the image.
         /// </summary>
         static Subject SubjectMask(RawImage img)
         {
+            var map = SceneAnalysis.SubjectOf(img);
+            if (map != null) return new Subject { Map = map };
             var faces = SceneAnalysis.Of(img).Faces;
             var list = new List<(float, float, float, float)>();
             foreach (var f in faces)
