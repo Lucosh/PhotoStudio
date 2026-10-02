@@ -161,6 +161,7 @@
             </MenuItem>
             <MenuItem Header="_Aiuto">
                 <MenuItem Header="Scorciatoie da tastiera" InputGestureText="F1" Tag="help.keys" Click="Menu_Click"/>
+                <MenuItem Header="Cerca aggiornamenti..." Tag="help.update" Click="Menu_Click"/>
                 <MenuItem Header="Informazioni su PhotoStudio" Tag="help.about" Click="Menu_Click"/>
             </MenuItem>
         </Menu>

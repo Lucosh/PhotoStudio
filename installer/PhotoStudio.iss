@@ -149,3 +149,11 @@ Root: HKA; Subkey: "Software\Classes\Directory\shell\PhotoStudio.Cull\command"; 
 
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
+; After an automatic update (PhotoStudio runs this setup with /SILENT /UPDATE=1) the program starts again by itself.
+Filename: "{app}\{#AppExe}"; Flags: nowait; Check: IsUpdate
+
+[Code]
+function IsUpdate: Boolean;
+begin
+  Result := ExpandConstant('{param:UPDATE|0}') = '1';
+end;

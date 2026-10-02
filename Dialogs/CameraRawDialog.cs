@@ -452,6 +452,7 @@ namespace PhotoStudio.Dialogs
             Row(p, T("Luminanza"), 0, 100, 0, x => x.NoiseLuma, (x, v) => x.NoiseLuma = v);
             Row(p, T("Colore"), 0, 100, 0, x => x.NoiseColor, (x, v) => x.NoiseColor = v);
             p.Children.Add(Hint(T("Luminanza leviga la grana delle foto ad alti ISO; Colore toglie le macchioline colorate. Controlla il risultato con lo zoom al 100% dopo l'apertura.")));
+            BuildAiDetailSection(p);
             Section(p, T("VIGNETTATURA (DOPO IL RITAGLIO)"));
             Row(p, T("Fattore"), -100, 100, 0, x => x.VignetteAmount, (x, v) => x.VignetteAmount = v);
             Row(p, T("Punto medio"), 0, 100, 0, x => x.VignetteMidpoint, (x, v) => x.VignetteMidpoint = v, reset: 50);
@@ -705,7 +706,9 @@ namespace PhotoStudio.Dialogs
                 var (jpeg, stats) = await Task.Run(() =>
                 {
                     var small = _full.Downscale(1024);
-                    var r = RawDevelop.Develop(small, settings);
+                    var look = settings.Clone();
+                    look.AiDenoise = look.AiRefocus = 0;   // the AI networks would take long, for a small preview
+                    var r = RawDevelop.Develop(small, look);
                     return (ImageIO.EncodeJpeg(r.Width, r.Height, r.Pixels, 85), AiEditor.DescribeStatistics(r.Pixels));
                 });
                 var request = new AiRequest
@@ -833,6 +836,7 @@ namespace PhotoStudio.Dialogs
             RefreshCurve();
             RefreshColor();
             RefreshMasks();
+            RefreshAiDetail();
             UpdateOverlay();
             if (_wbCombo != null)
             {
@@ -895,7 +899,7 @@ namespace PhotoStudio.Dialogs
             try
             {
                 r = await Task.Run(() => cropMode
-                    ? RawDevelop.ApplyGeometry(RawDevelop.Render(_preview, s), _preview.Width, _preview.Height, s, false)
+                    ? RawDevelop.ApplyGeometry(RawDevelop.Render(AiRestore.Apply(_preview, s), s), _preview.Width, _preview.Height, s, false)
                     : RawDevelop.Develop(_preview, s, maskPreview));
             }
             catch (Exception ex) { _status.Text = T("Errore di anteprima: {0}", ex.Message); return; }
@@ -974,6 +978,7 @@ namespace PhotoStudio.Dialogs
             if (_processing) { e.Cancel = true; return; }
             _closed = true;
             _aiCts?.Cancel();
+            _downloadCts?.Cancel();
             _aiTimer.Stop();
         }
     }

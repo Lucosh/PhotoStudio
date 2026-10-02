@@ -76,6 +76,10 @@ namespace PhotoStudio.Core
         // ---- Detail
         public double Sharpening;                     // 0..150
         public double NoiseLuma, NoiseColor;          // 0..100
+        // AI networks on the RAW data (see AiRestore): how much of their result is used
+        public double AiDenoise;                      // 0..100
+        public double AiRefocus;                      // 0..150
+        public RefocusArea AiRefocusArea;
 
         // ---- Effects (vignette after the crop, as in Lightroom)
         public double VignetteAmount;                 // -100..100
@@ -140,7 +144,11 @@ namespace PhotoStudio.Core
                 r.Texture = s.Texture; r.Clarity = s.Clarity; r.Dehaze = s.Dehaze;
                 r.Vibrance = s.Vibrance; r.Saturation = s.Saturation;
             }
-            if (groups.HasFlag(SettingsGroups.Detail)) { r.Sharpening = s.Sharpening; r.NoiseLuma = s.NoiseLuma; r.NoiseColor = s.NoiseColor; }
+            if (groups.HasFlag(SettingsGroups.Detail))
+            {
+                r.Sharpening = s.Sharpening; r.NoiseLuma = s.NoiseLuma; r.NoiseColor = s.NoiseColor;
+                r.AiDenoise = s.AiDenoise; r.AiRefocus = s.AiRefocus; r.AiRefocusArea = s.AiRefocusArea;
+            }
             if (groups.HasFlag(SettingsGroups.Curve)) { r.CurveRgb = s.CurveRgb; r.CurveR = s.CurveR; r.CurveG = s.CurveG; r.CurveB = s.CurveB; }
             if (groups.HasFlag(SettingsGroups.Color))
             {
@@ -185,6 +193,8 @@ namespace PhotoStudio.Core
             if (HasMixer) parts.Add(T("mix colori"));
             if (HasGrading) parts.Add(T("color grading"));
             if (NoiseLuma >= 0.5 || NoiseColor >= 0.5) parts.Add(T("riduzione rumore"));
+            if (AiDenoise >= 1) parts.Add(T("riduzione rumore AI"));
+            if (AiRefocus >= 1) parts.Add(T("rimessa a fuoco AI"));
             Add(T("vignettatura"), VignetteAmount);
             if (GrainAmount >= 0.5) parts.Add(T("grana"));
             if (Math.Abs(Angle) >= 0.01) parts.Add(T("raddrizzata {0}°", Angle.ToString("+0.0;-0.0", CultureInfo.CurrentCulture)));

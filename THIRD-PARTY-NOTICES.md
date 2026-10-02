@@ -10,8 +10,10 @@ following third-party components, which remain under their own licenses.
 | [Sdcb.LibRaw](https://github.com/sdcb/Sdcb.LibRaw) | .NET wrapper for LibRaw | MIT |
 | [Anthropic C# SDK](https://www.nuget.org/packages/Anthropic) | Optional AI editing with Claude | MIT |
 | Microsoft.Extensions.AI.Abstractions, System.Text.Json, System.Net.ServerSentEvents | Dependencies of the Anthropic SDK | MIT |
-| [ONNX Runtime](https://github.com/microsoft/onnxruntime) (via `Microsoft.ML.OnnxRuntime`, with System.Numerics.Tensors) | Running the face detector on the processor, offline | MIT |
+| [ONNX Runtime](https://github.com/microsoft/onnxruntime) with DirectML (via `Microsoft.ML.OnnxRuntime.DirectML`, with System.Numerics.Tensors) | Running the face detector and the AI networks offline, on the graphics card or the processor | MIT |
+| [DirectML](https://github.com/microsoft/DirectML) (`Microsoft.AI.DirectML`) | Running the AI networks on any DirectX 12 graphics card | MIT |
 | [YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) face detection model (`face_detection_yunet_2023mar.onnx`, © 2020 Shiqi Yu) | Finding the faces for the automatic light tools | MIT |
+| [NAFNet](https://github.com/megvii-research/NAFNet) image restoration networks (width 32, SIDD and GoPro weights, © 2022 megvii-model), converted to ONNX with `tools/export_nafnet.py` | AI noise reduction and AI refocus; downloaded on first use, not bundled | MIT |
 
 LibRaw is used unmodified. Its source code is available at <https://github.com/LibRaw/LibRaw>
 and the native build used here at <https://github.com/sdcb/Sdcb.LibRaw>.

@@ -49,6 +49,16 @@ namespace PhotoStudio.Core
 
         /// <summary>What the automatic tools found in the photo (sky, faces): shared with its reduced copies.</summary>
         internal SceneCache Scene { get; init; } = new SceneCache();
+        /// <summary>What the AI noise reduction and refocus made of the photo: shared with its reduced copies.</summary>
+        internal RestoreCache Restore { get; init; } = new RestoreCache();
+
+        /// <summary>The same photo with other pixel values (same size, shooting data and caches).</summary>
+        internal RawImage WithData(ushort[] data) => new RawImage
+        {
+            Width = Width, Height = Height, Data = data, Alpha = Alpha, SceneReferred = SceneReferred,
+            Scale = Scale, Camera = Camera, Info = Info, Iso = Iso, Shutter = Shutter, Aperture = Aperture,
+            Scene = Scene, Restore = Restore,
+        };
 
         public static bool IsRawFile(string path) => RawExtensions.Contains(Path.GetExtension(path) ?? "");
 
@@ -190,7 +200,7 @@ namespace PhotoStudio.Core
             {
                 Width = nw, Height = nh, Data = d, Alpha = a, SceneReferred = SceneReferred,
                 Scale = Scale / f, Camera = Camera, Info = Info,
-                Iso = Iso, Shutter = Shutter, Aperture = Aperture, Scene = Scene,
+                Iso = Iso, Shutter = Shutter, Aperture = Aperture, Scene = Scene, Restore = Restore,
             };
         }
 

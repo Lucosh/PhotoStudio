@@ -49,6 +49,7 @@ Scegli le foto migliori di un servizio, sviluppa i RAW e ritocca, con l'aiuto fa
 - Curva di tono (RGB e per canale), mix colori HSL e ruote di color grading.
 - Nitidezza, riduzione del rumore, vignettatura, grana, ritaglio e raddrizzamento.
 - Maschere locali (lineari, radiali e per luminosità), vista prima/dopo, preset e copia/incolla delle impostazioni.
+- **Riduzione rumore AI** e **rimessa a fuoco AI** (sul soggetto o su tutta la foto), con reti neurali che girano sul tuo PC, sulla scheda video quando possibile. Le reti (circa 70 e 115 MB) si scaricano dalle release di questo progetto la prima volta che le usi.
 
 ### ☀️ Luce intelligente, anche per principianti
 
@@ -126,6 +127,7 @@ L'installer non chiede i permessi di amministratore e puoi disinstallare il prog
 
 - Niente account, niente pubblicità, nessuna telemetria. PhotoStudio funziona anche senza Internet.
 - Le tue foto non escono mai dal PC, **a meno che tu non usi le funzioni AI**. In quel caso PhotoStudio invia solo un'anteprima piccola (al massimo 1024 pixel sul lato lungo), i valori dei cursori, il modello della fotocamera con i dati di scatto e alcune statistiche sulla luminosità. Non invia nomi dei file né la posizione GPS, e li invia solo al servizio che hai scelto. Con Ollama tutto resta sul tuo computer.
+- Una volta al giorno PhotoStudio chiede a GitHub se c'è una nuova versione (**Aiuto ▸ Cerca aggiornamenti**). Non invia niente su di te o sulle tue foto. Se trova una versione nuova chiede prima di installarla, e controlla il download con il file `SHA256SUMS.txt` della release.
 - Le chiavi API sono cifrate da Windows (DPAPI) e salvate solo in `%APPDATA%\PhotoStudio`. Può leggerle solo il tuo account Windows.
 
 ## Configurare l'AI

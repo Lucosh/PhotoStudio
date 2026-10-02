@@ -173,6 +173,7 @@ namespace PhotoStudio
             A("crop.cancel", CancelCrop);
             A("help.keys", ShowShortcuts, false);
             A("help.about", ShowAbout, false);
+            A("help.update", () => CheckForUpdates(true), false);
 
             // ---- Shortcuts
             const ModifierKeys C = ModifierKeys.Control, Sh = ModifierKeys.Shift, Al = ModifierKeys.Alt, None = ModifierKeys.None;

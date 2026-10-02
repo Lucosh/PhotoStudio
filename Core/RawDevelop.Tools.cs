@@ -22,7 +22,7 @@ namespace PhotoStudio.Core
         /// <summary>The finished photo: every tool, then straighten and crop.</summary>
         public static (int Width, int Height, byte[] Pixels) Develop(RawImage img, RawSettings s, int maskPreview = -1)
         {
-            var px = Render(img, s, maskPreview);
+            var px = Render(AiRestore.Apply(img, s), s, maskPreview);
             if (!s.HasGeometry) return (img.Width, img.Height, px);
             return ApplyGeometry(px, img.Width, img.Height, s, true);
         }

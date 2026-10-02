@@ -49,6 +49,7 @@ Sort a whole shoot, develop your RAW files and retouch them, with optional AI he
 - Tone curve (RGB and per channel), HSL color mixer and color grading wheels.
 - Sharpening, noise reduction, vignette, grain, crop and straighten.
 - Local masks (linear, radial and by brightness), a before/after view, presets, and copy/paste of settings.
+- **AI noise reduction** and **AI refocus** (on the subject or on the whole photo), with neural networks that run on your PC, on the graphics card when possible. The networks (about 70 and 115 MB) are downloaded from this project's releases the first time you use them.
 
 ### ☀️ Smart light, made easy
 
@@ -124,6 +125,7 @@ The installer does not need administrator rights, and you can remove the program
 
 - No accounts, no ads and no telemetry. PhotoStudio works offline.
 - Your photos never leave your PC, **unless you use the AI features**. In that case PhotoStudio sends only a small preview (at most 1024 pixels on the long side), the slider values, the camera model and shooting settings, and a few brightness statistics. It sends no file names and no GPS position, and only to the service you chose. With Ollama, everything stays on your computer.
+- Once a day PhotoStudio asks GitHub whether there is a new version (**Help ▸ Check for updates**). Nothing about you or your photos is sent. When a version is available it asks before installing it, and checks the download against the release's `SHA256SUMS.txt`.
 - API keys are encrypted by Windows (DPAPI) and saved only in `%APPDATA%\PhotoStudio`, readable only by your Windows account.
 
 ## Setting up the AI

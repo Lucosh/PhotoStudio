@@ -17,6 +17,7 @@ namespace PhotoStudio
             var window = new MainWindow();
             MainWindow = window;
             window.Show();
+            window.CheckForUpdatesInBackground();
 
             foreach (var arg in e.Args)
             {
