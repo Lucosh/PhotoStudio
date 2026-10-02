@@ -70,13 +70,13 @@ namespace PhotoStudio.Core
         };
 
         /// <summary>
-        /// LaMa (big-lama, Apache 2.0) exported to ONNX by Carve: rebuilds the background behind removed objects.
-        /// It runs on the processor: DirectML does not support its Fourier layers.
+        /// LaMa (big-lama, Apache 2.0), exported with tools/export_lama.py so that it takes any size (a multiple of 8)
+        /// and runs on the graphics card too: rebuilds the background behind removed objects.
         /// </summary>
         public static readonly Model Inpaint = new Model
         {
-            File = "lama_fp32.onnx", Size = 208044816, Gpu = false,
-            Sha256 = "1faef5301d78db7dda502fe59966957ec4b79dd64e16f03ed96913c7a4eb68d6",
+            File = "lama-hd.onnx", Size = 210731559,
+            Sha256 = "e14bcceadfb9ca4c260df6094257db99670f647a19e89cab71f56bb473fa1475",
         };
 
         /// <summary>The networks that are downloaded on first use (the others are inside the application).</summary>

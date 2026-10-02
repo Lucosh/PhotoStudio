@@ -69,7 +69,7 @@ Scegli le foto migliori di un servizio, sviluppa i RAW e ritocca, con l'aiuto fa
 - Livelli, selezioni, pennello, regolazioni (livelli, curve, tonalità/saturazione, bianco e nero…) e filtri (sfocatura, nitidezza, disturbo, vignettatura…).
 - Formato di progetto `.psx`, che conserva i livelli.
 - **Ingrandimento AI 2×** (menu Immagine), che ricostruisce i dettagli invece di allargare solo i pixel.
-- **Rimuovi con AI** (menu Modifica, Maiusc+Canc): selezioni una persona o un oggetto, anche con **Selezione ▸ Soggetto AI**, e lo sfondo dietro viene ricostruito.
+- **Rimuovi con AI** (menu Modifica, Maiusc+Canc): selezioni una persona o un oggetto, anche con **Selezione ▸ Soggetto AI**, e lo sfondo dietro viene ricostruito alla risoluzione della foto, con la sua trama vera. Una seconda voce toglie anche l'ombra che l'oggetto proietta a terra.
 - Applica impostazioni o preset a molte foto insieme.
 - Esportazione con ridimensionamento, rinomina automatica e filigrana.
 

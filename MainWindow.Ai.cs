@@ -70,8 +70,11 @@ namespace PhotoStudio
 
         // ================= Rimuovi con AI =================
 
-        /// <summary>Modifica ▸ Rimuovi con AI: what is selected on the active layer goes, and the background behind it is rebuilt.</summary>
-        async void AiRemove()
+        /// <summary>
+        /// Modifica ▸ Rimuovi con AI: what is selected on the active layer goes, and the background behind it is rebuilt;
+        /// with shadow, also the shadow the object casts on the ground.
+        /// </summary>
+        async void AiRemove(bool shadow)
         {
             var layer = ActiveLayer;
             if (layer == null) return;
@@ -98,7 +101,7 @@ namespace PhotoStudio
             try
             {
                 result = await Task.Run(() => AiInpaint.Remove(src, w, h, mask, f =>
-                    Dispatcher.BeginInvoke(new Action(() => progress.Report((int)(f * 100), T("La rete AI ricostruisce lo sfondo: {0:0}%", f * 100)))), cts.Token));
+                    Dispatcher.BeginInvoke(new Action(() => progress.Report((int)(f * 100), T("La rete AI ricostruisce lo sfondo: {0:0}%", f * 100)))), cts.Token, shadow));
             }
             catch (Exception ex)
             {

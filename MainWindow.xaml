@@ -48,6 +48,7 @@
                 <MenuItem Header="Incolla" InputGestureText="Ctrl+V" Tag="edit.paste" Click="Menu_Click"/>
                 <MenuItem Header="Cancella" InputGestureText="Canc" Tag="edit.clear" Click="Menu_Click"/>
                 <MenuItem Header="✨ Rimuovi con AI" InputGestureText="Maiusc+Canc" Tag="edit.airemove" Click="Menu_Click"/>
+                <MenuItem Header="✨ Rimuovi con AI, ombra compresa" Tag="edit.airemoveshadow" Click="Menu_Click"/>
                 <Separator/>
                 <MenuItem Header="Riempi con colore di primo piano" InputGestureText="Alt+Backspace" Tag="edit.fillfg" Click="Menu_Click"/>
                 <MenuItem Header="Riempi con colore di sfondo" InputGestureText="Ctrl+Backspace" Tag="edit.fillbg" Click="Menu_Click"/>
