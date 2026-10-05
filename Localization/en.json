@@ -234,6 +234,7 @@
   "Elaborazione a piena risoluzione ({0} × {1})...": "Processing at full resolution ({0} × {1})...",
   "Elaborazione interrotta.": "Processing stopped.",
   "Elaborazione non riuscita:\n{0}": "Processing failed:\n{0}",
+  "Memoria insufficiente per sviluppare la foto a piena risoluzione.\nChiudi alcune schede o altri programmi e riprova.": "Not enough memory to develop the photo at full resolution.\nClose some tabs or other programs and try again.",
   "Elimina": "Delete",
   "Elimina i modelli scaricati": "Delete the downloaded models",
   "Elimina i risultati salvati": "Delete the saved results",

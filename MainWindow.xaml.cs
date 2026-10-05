@@ -122,6 +122,7 @@ namespace PhotoStudio
                 S.Doc.Layers.CollectionChanged -= Layers_CollectionChanged;
             }
             CancelInteraction();
+            if (S != null && S != s) S.Doc.Park();
             S = s;
             SyncBatchSelection();
             UpdateCursor();

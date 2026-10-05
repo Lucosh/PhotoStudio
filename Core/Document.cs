@@ -15,13 +15,25 @@ namespace PhotoStudio.Core
         {
             Width = width;
             Height = height;
-            Composite = new byte[width * height * 4];
         }
+
+        byte[] _composite;
 
         public int Width { get; private set; }
         public int Height { get; private set; }
         public ObservableCollection<Layer> Layers { get; } = new ObservableCollection<Layer>();
-        public byte[] Composite { get; private set; }
+        /// <summary>The layers blended for the screen; made again (empty, see <see cref="CompositeRegion"/>) after <see cref="Park"/>.</summary>
+        public byte[] Composite => _composite ??= new byte[Width * Height * 4];
+
+        /// <summary>
+        /// Frees what a tab that is not shown does not need: the screen image and the pixels of untouched layers.
+        /// With dozens of photos open they would otherwise fill the memory (see <see cref="Layer.Park"/>).
+        /// </summary>
+        public void Park()
+        {
+            _composite = null;
+            foreach (var l in Layers) l.Park();
+        }
         public Int32Rect Bounds => new Int32Rect(0, 0, Width, Height);
 
         public static Document CreateBlank(int w, int h, Color? background)
@@ -142,8 +154,7 @@ namespace PhotoStudio.Core
 
         public void Restore(DocState s)
         {
-            if (s.Width != Width || s.Height != Height || Composite.Length != s.Width * s.Height * 4)
-                Composite = new byte[s.Width * s.Height * 4];
+            if (s.Width != Width || s.Height != Height) _composite = null;
             Width = s.Width;
             Height = s.Height;
             Layers.Clear();
@@ -172,7 +183,7 @@ namespace PhotoStudio.Core
             }
             Width = nw;
             Height = nh;
-            Composite = new byte[nw * nh * 4];
+            _composite = null;
         }
 
         /// <summary>Merges the layer at index into the one below it. Returns the index of the merged layer.</summary>

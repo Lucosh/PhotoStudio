@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using static PhotoStudio.Core.Loc;
@@ -64,8 +65,26 @@ namespace PhotoStudio.Core
 
         public byte[] Pixels
         {
-            get => _pixels;
+            get
+            {
+                var p = _pixels;
+                if (p != null) return p;
+                // Parked (see Park): the history copy holds the same pixels.
+                p = (byte[])SnapshotPixels.Clone();
+                return Interlocked.CompareExchange(ref _pixels, p, null) ?? p;
+            }
             set { _pixels = value; Dirty = true; }
+        }
+
+        /// <summary>
+        /// Frees the pixels of a layer in a tab that is not shown when they are identical to the history copy:
+        /// they are made again from it on first use, so an untouched photo costs one copy instead of two.
+        /// </summary>
+        internal void Park()
+        {
+            var p = _pixels;
+            if (p == null || Dirty || SnapshotPixels == null || !p.AsSpan().SequenceEqual(SnapshotPixels)) return;
+            Interlocked.CompareExchange(ref _pixels, null, p);
         }
 
         public string Name { get => _name; set { if (_name != value) { _name = value; Raise(); } } }
@@ -93,11 +112,11 @@ namespace PhotoStudio.Core
         }
 
         public Layer Clone(string name) =>
-            new Layer(name, Width, Height, (byte[])_pixels.Clone()) { _visible = _visible, _opacity = _opacity, _blend = _blend };
+            new Layer(name, Width, Height, (byte[])Pixels.Clone()) { _visible = _visible, _opacity = _opacity, _blend = _blend };
 
         public void Fill(Color c)
         {
-            var p = _pixels;
+            var p = Pixels;
             for (int i = 0; i < p.Length; i += 4)
             {
                 p[i] = c.B; p[i + 1] = c.G; p[i + 2] = c.R; p[i + 3] = c.A;
@@ -117,7 +136,7 @@ namespace PhotoStudio.Core
                 for (int x = 0; x < tw; x++)
                 {
                     int sx = Math.Min(Width - 1, (int)((x + 0.5) / s));
-                    Buffer.BlockCopy(_pixels, (sy * Width + sx) * 4, buf, (y * tw + x) * 4, 4);
+                    Buffer.BlockCopy(Pixels, (sy * Width + sx) * 4, buf, (y * tw + x) * 4, 4);
                 }
             }
             var bmp = BitmapSource.Create(tw, th, 96, 96, PixelFormats.Bgra32, null, buf, tw * 4);
