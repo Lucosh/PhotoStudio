@@ -11,7 +11,7 @@ namespace PhotoStudio.Core
         public bool Visible;
         public double Opacity;
         public BlendMode Blend;
-        public byte[] Pixels; // shared, immutable
+        public FrozenPixels Pixels; // shared, immutable, in memory or on disk
     }
 
     public sealed class DocState

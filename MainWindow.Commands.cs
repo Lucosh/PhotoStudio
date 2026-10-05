@@ -448,6 +448,7 @@ namespace PhotoStudio
             S.Title = Path.GetFileName(path);
             S.Modified = false;
             UpdateTitle();
+            ScheduleBackup();
             Status(T("Salvato: {0}", path));
             return true;
         }
@@ -478,15 +479,20 @@ namespace PhotoStudio
             try
             {
                 using (Busy())
-                {
-                    if (path.EndsWith(".psx", StringComparison.OrdinalIgnoreCase)) ImageIO.SaveProject(path, Doc);
-                    else ImageIO.SaveBitmap(path, Doc.Width, Doc.Height, Doc.Render(), S.JpegQuality, PhotoLibrary.ReadMetadata(S.SourcePath));
-                }
+                    Errors.Retry(() =>
+                    {
+                        if (path.EndsWith(".psx", StringComparison.OrdinalIgnoreCase)) ImageIO.SaveProject(path, Doc);
+                        else ImageIO.SaveBitmap(path, Doc.Width, Doc.Height, Doc.Render(), S.JpegQuality, PhotoLibrary.ReadMetadata(S.SourcePath));
+                        return true;
+                    });
                 return true;
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, T("Impossibile salvare il file:\n{0}\n\n{1}", path, ex.Message), "PhotoStudio", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, Errors.IsOutOfMemory(ex)
+                        ? T("Memoria insufficiente per salvare:\n{0}\n\nLa foto non è persa: resta aperta e ne esiste una copia di sicurezza su disco. Chiudi altri programmi e riprova.", path)
+                        : T("Impossibile salvare il file:\n{0}\n\n{1}", path, ex.Message),
+                    "PhotoStudio", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
         }

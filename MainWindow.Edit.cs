@@ -190,7 +190,9 @@ namespace PhotoStudio
             }
             Status("");
             var dlg = new CameraRawDialog(this, raw, System.IO.Path.GetFileName(path), T("Apri immagine"), initial: initial);
-            if (dlg.ShowDialog() != true || dlg.Result == null) return null;
+            bool developed = dlg.ShowDialog() == true && dlg.Result != null;
+            ReleaseMemorySoon();   // the full-size development leaves its buffers behind
+            if (!developed) return null;
 
             var doc = new Document(dlg.ResultWidth, dlg.ResultHeight);
             var layer = new Layer(T("Sfondo"), dlg.ResultWidth, dlg.ResultHeight, dlg.Result);
@@ -306,7 +308,9 @@ namespace PhotoStudio
             // On a layer the size cannot change: no straighten/crop here.
             var dlg = new CameraRawDialog(this, linear, (focusAi ? T("Modifica con AI — ") : T("Filtro — ")) + layer.Name, "OK", focusAi: focusAi,
                                           allowGeometry: false, startTab: startTab);
-            if (dlg.ShowDialog() != true || dlg.Result == null) return;
+            bool developed = dlg.ShowDialog() == true && dlg.Result != null;
+            ReleaseMemorySoon();   // the full-size development leaves its buffers behind
+            if (!developed) return;
             layer.Pixels = ImageOps.ApplyMask(original, dlg.Result, S.Selection);
             Recomposite();
             Commit(focusAi ? T("Modifica con AI") : T("Filtro Camera Raw"));
@@ -331,7 +335,9 @@ namespace PhotoStudio
             }
             string name = System.IO.Path.GetFileName(s.SourcePath);
             var dlg = new CameraRawDialog(this, src, (focusAi ? T("Modifica con AI — ") : "") + name, "OK", focusAi: focusAi, initial: s.RawSettings, startTab: startTab);
-            if (dlg.ShowDialog() != true || dlg.Result == null) return;
+            bool developed = dlg.ShowDialog() == true && dlg.Result != null;
+            ReleaseMemorySoon();   // the full-size development leaves its buffers behind
+            if (!developed) return;
             ReplaceDeveloped(dlg.ResultWidth, dlg.ResultHeight, dlg.Result, focusAi ? T("Modifica con AI") : "Camera Raw");
             MarkDeveloped(s, dlg.Settings);
             var item = BatchItemOf(s);

@@ -23,6 +23,7 @@ namespace PhotoStudio
             { 0.01, 0.02, 0.03, 0.05, 0.0667, 0.0833, 0.125, 0.1667, 0.25, 0.3333, 0.5, 0.6667, 1, 1.5, 2, 3, 4, 5, 6, 8, 12, 16, 24, 32 };
 
         readonly ObservableCollection<Session> _sessions = new ObservableCollection<Session>();
+        long _tabUses;
         readonly DispatcherTimer _histTimer, _opacityCommitTimer;
         readonly DrawingBrush _checker;
         Session S;
@@ -46,6 +47,8 @@ namespace PhotoStudio
 
             BlendCombo.ItemsSource = BlendItem.All;
             TabStrip.ItemsSource = _sessions;
+            InitMemory();
+            InitRecovery();
             _checker = CreateChecker();
             CheckerRect.Fill = _checker;
 
@@ -124,6 +127,7 @@ namespace PhotoStudio
             CancelInteraction();
             if (S != null && S != s) S.Doc.Park();
             S = s;
+            if (s != null) s.LastUsed = ++_tabUses;
             SyncBatchSelection();
             UpdateCursor();
 
@@ -157,8 +161,10 @@ namespace PhotoStudio
             HistoryList.ItemsSource = s.History.Entries;
             SyncHistorySelection();
             InitDisplay();
+            foreach (var l in s.Doc.Layers) if (l.Thumbnail == null) l.UpdateThumbnail();   // recovered tabs
             UpdateSelectionVisual();
             UpdateTitle();
+            TrimMemory();
 
             double zoom = s.Zoom, sx = s.ScrollX, sy = s.ScrollY;
             Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
@@ -197,6 +203,8 @@ namespace PhotoStudio
                 _sessions.Remove(s);
                 OnSessionClosed(s);
             }
+            ReleaseMemorySoon();
+            ScheduleBackup();
         }
 
         bool ConfirmClose(Session s)
@@ -282,7 +290,9 @@ namespace PhotoStudio
         void InitDisplay()
         {
             int w = Doc.Width, h = Doc.Height;
-            _display = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgra32, null);
+            // The same screen image serves every tab of the same size: no new 70 MB at each change of tab.
+            if (_display == null || _display.PixelWidth != w || _display.PixelHeight != h)
+                _display = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgra32, null);
             CanvasImage.Source = _display;
             CanvasImage.Width = CheckerRect.Width = Overlay.Width = w;
             CanvasImage.Height = CheckerRect.Height = Overlay.Height = h;
@@ -389,6 +399,7 @@ namespace PhotoStudio
             S.Modified = true;
             SyncHistorySelection();
             UpdateTitle();
+            TrimMemory();
         }
 
         void RestoreState(DocState st)
@@ -412,6 +423,7 @@ namespace PhotoStudio
             SyncHistorySelection();
             S.Modified = true;
             UpdateTitle();
+            TrimMemory();
         }
 
         void Undo()
@@ -583,6 +595,9 @@ namespace PhotoStudio
                 if (s != S) ActivateSession(s);
                 if (!ConfirmClose(s)) { e.Cancel = true; return; }
             }
+            // Closed normally, with every change saved or given up on purpose: the safety copy is no longer needed.
+            _backupTimer.Stop();
+            Recovery.Clear();
         }
 
         // ================= Language =================

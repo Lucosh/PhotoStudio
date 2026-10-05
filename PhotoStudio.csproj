@@ -24,6 +24,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The garbage collector compacts the memory of the large images more readily, instead of growing. -->
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="5" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Interface translations: the Italian text in the code is the key. -->
     <EmbeddedResource Include="Localization\*.json" LogicalName="PhotoStudio.Localization.%(Filename).json" />
     <!-- YuNet face detector: tells the automatic light tools where the faces are. -->

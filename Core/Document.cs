@@ -34,6 +34,17 @@ namespace PhotoStudio.Core
             _composite = null;
             foreach (var l in Layers) l.Park();
         }
+
+        /// <summary>Memory that cannot go to disk: the screen image and the working pixels of the layers.</summary>
+        internal long WorkingBytes
+        {
+            get
+            {
+                long n = _composite?.LongLength ?? 0;
+                foreach (var l in Layers) n += l.WorkingBytes;
+                return n;
+            }
+        }
         public Int32Rect Bounds => new Int32Rect(0, 0, Width, Height);
 
         public static Document CreateBlank(int w, int h, Color? background)
@@ -51,11 +62,12 @@ namespace PhotoStudio.Core
             r = ImageOps.Intersect(r, Bounds);
             if (r.Width <= 0 || r.Height <= 0) return;
 
-            var list = new List<Layer>();
+            // The pixels are fetched once, before the rows: a layer coming back from disk is read only once.
+            var list = new List<(byte[] Px, double Opacity, BlendMode Blend)>();
             for (int i = Layers.Count - 1; i >= 0; i--)
             {
                 var l = Layers[i];
-                if (l.Visible && l.Opacity > 0) list.Add(l);
+                if (l.Visible && l.Opacity > 0) list.Add((l.Pixels, l.Opacity / 100.0, l.Blend));
             }
             var comp = Composite;
             int w = Width;
@@ -63,7 +75,7 @@ namespace PhotoStudio.Core
             {
                 int start = (y * w + r.X) * 4, end = start + r.Width * 4;
                 Array.Clear(comp, start, end - start);
-                foreach (var l in list) BlendSpan(comp, l.Pixels, start, end, l.Opacity / 100.0, l.Blend);
+                foreach (var (px, opacity, blend) in list) BlendSpan(comp, px, start, end, opacity, blend);
             });
         }
 
@@ -73,14 +85,14 @@ namespace PhotoStudio.Core
             var buf = new byte[Width * Height * 4];
             if (background is Color c)
                 for (int i = 0; i < buf.Length; i += 4) { buf[i] = c.B; buf[i + 1] = c.G; buf[i + 2] = c.R; buf[i + 3] = 255; }
-            var list = new List<Layer>();
+            var list = new List<(byte[] Px, double Opacity, BlendMode Blend)>();
             for (int i = Layers.Count - 1; i >= 0; i--)
-                if (Layers[i].Visible && Layers[i].Opacity > 0) list.Add(Layers[i]);
+                if (Layers[i].Visible && Layers[i].Opacity > 0) list.Add((Layers[i].PixelsForReading, Layers[i].Opacity / 100.0, Layers[i].Blend));
             int rowBytes = Width * 4;
             Parallel.For(0, Height, y =>
             {
                 int start = y * rowBytes;
-                foreach (var l in list) BlendSpan(buf, l.Pixels, start, start + rowBytes, l.Opacity / 100.0, l.Blend);
+                foreach (var (px, opacity, blend) in list) BlendSpan(buf, px, start, start + rowBytes, opacity, blend);
             });
             return buf;
         }
@@ -142,12 +154,12 @@ namespace PhotoStudio.Core
             var st = new DocState { Width = Width, Height = Height, ActiveIndex = activeIndex, Selection = selection };
             foreach (var l in Layers)
             {
-                if (l.Dirty || l.SnapshotPixels == null)
+                if (l.Dirty || l.Snapshot == null)
                 {
-                    l.SnapshotPixels = (byte[])l.Pixels.Clone();
+                    l.Snapshot = new FrozenPixels((byte[])l.Pixels.Clone());
                     l.Dirty = false;
                 }
-                st.Layers.Add(new LayerState { Name = l.Name, Visible = l.Visible, Opacity = l.Opacity, Blend = l.Blend, Pixels = l.SnapshotPixels });
+                st.Layers.Add(new LayerState { Name = l.Name, Visible = l.Visible, Opacity = l.Opacity, Blend = l.Blend, Pixels = l.Snapshot });
             }
             return st;
         }
@@ -160,13 +172,13 @@ namespace PhotoStudio.Core
             Layers.Clear();
             foreach (var ls in s.Layers)
             {
-                var l = new Layer(ls.Name, s.Width, s.Height, (byte[])ls.Pixels.Clone())
+                var l = new Layer(ls.Name, s.Width, s.Height, ls.Pixels.Copy())
                 {
                     Visible = ls.Visible,
                     Opacity = ls.Opacity,
                     Blend = ls.Blend,
                 };
-                l.SnapshotPixels = ls.Pixels;
+                l.Snapshot = ls.Pixels;
                 l.Dirty = false;
                 l.UpdateThumbnail();
                 Layers.Add(l);

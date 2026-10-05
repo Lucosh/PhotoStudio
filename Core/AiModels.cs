@@ -123,12 +123,23 @@ namespace PhotoStudio.Core
         }
 
         static readonly Dictionary<Model, Runner> Runners = new Dictionary<Model, Runner>();
+        static Timer _idleTimer;
+
+        /// <summary>A network not used for this long is closed: it takes hundreds of MB, also of the graphics card.</summary>
+        static readonly TimeSpan IdleLimit = TimeSpan.FromMinutes(2);
+
+        static AiModels()
+        {
+            // The memory has run out: the networks are the first thing to give back.
+            Errors.MemoryShort += () => CloseIdle(TimeSpan.Zero);
+        }
 
         /// <summary>The network ready to run, or null when it is not installed or cannot be loaded.</summary>
         internal static Runner Get(Model m)
         {
             lock (Runners)
             {
+                _idleTimer ??= new Timer(_ => CloseIdle(IdleLimit), null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
                 if (Runners.TryGetValue(m, out var r)) return r;
                 if (!m.Installed) return null;
                 r = Runner.Create(m);
@@ -137,11 +148,20 @@ namespace PhotoStudio.Core
             }
         }
 
+        /// <summary>Closes the networks not used for at least this long; they open again by themselves when needed.</summary>
+        static void CloseIdle(TimeSpan idle)
+        {
+            Runner[] all;
+            lock (Runners) all = Runners.Values.ToArray();
+            foreach (var r in all) r.CloseIfIdle(idle);
+        }
+
         /// <summary>One network, on the graphics card if possible; if the card fails it moves to the processor for good.</summary>
         internal sealed class Runner
         {
             readonly Model _model;
-            InferenceSession _session;
+            InferenceSession _session;   // null while closed for lack of use
+            DateTime _lastUse = DateTime.UtcNow;
             public bool OnGpu { get; private set; }
 
             Runner(Model model, InferenceSession session, bool gpu) { _model = model; _session = session; OnGpu = gpu; }
@@ -200,18 +220,40 @@ namespace PhotoStudio.Core
             {
                 lock (this)
                 {
+                    _lastUse = DateTime.UtcNow;
                     try
                     {
+                        _session ??= Open(_model, OnGpu) ?? throw new InvalidOperationException("ONNX Runtime");
                         return RunOn(_session, inputs, outputs);
                     }
                     catch when (OnGpu)
                     {
                         var cpu = Open(_model, false) ?? throw new InvalidOperationException("ONNX Runtime");
-                        _session.Dispose();
+                        _session?.Dispose();
                         _session = cpu;
                         OnGpu = false;
                         return RunOn(_session, inputs, outputs);
                     }
+                    finally
+                    {
+                        _lastUse = DateTime.UtcNow;
+                    }
+                }
+            }
+
+            /// <summary>Frees the memory of the network when it has not run for this long (never while it runs).</summary>
+            public void CloseIfIdle(TimeSpan idle)
+            {
+                if (!Monitor.TryEnter(this)) return;   // running now
+                try
+                {
+                    if (_session == null || DateTime.UtcNow - _lastUse < idle) return;
+                    _session.Dispose();
+                    _session = null;
+                }
+                finally
+                {
+                    Monitor.Exit(this);
                 }
             }
 

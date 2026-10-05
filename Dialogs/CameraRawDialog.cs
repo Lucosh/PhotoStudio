@@ -968,11 +968,10 @@ namespace PhotoStudio.Dialogs
                 var r = await Task.Run(() =>
                 {
                     try { return RawDevelop.Develop(_full, s, ct: token); }
-                    catch (OutOfMemoryException)
+                    catch (Exception ex) when (Errors.IsOutOfMemory(ex))
                     {
-                        // Often the memory is only held by buffers already freed: give it back to Windows and try once more.
-                        GC.Collect(2, GCCollectionMode.Aggressive, true, true);
-                        GC.WaitForPendingFinalizers();
+                        // The open photos go to disk and the freed buffers go back to Windows: then one more try.
+                        Errors.ReleaseMemory();
                         return RawDevelop.Develop(_full, s, ct: token);
                     }
                 });
@@ -989,7 +988,7 @@ namespace PhotoStudio.Dialogs
                 _cancel.Content = T("Annulla");
                 if (ex is OperationCanceledException) { _status.Text = T("Elaborazione interrotta."); return; }
                 _status.Text = "";
-                string message = ex is OutOfMemoryException
+                string message = Errors.IsOutOfMemory(ex)
                     ? T("Memoria insufficiente per sviluppare la foto a piena risoluzione.\nChiudi alcune schede o altri programmi e riprova.")
                     : T("Elaborazione non riuscita:\n{0}", ex.Message);
                 MessageBox.Show(this, message, "Camera Raw", MessageBoxButton.OK, MessageBoxImage.Error);

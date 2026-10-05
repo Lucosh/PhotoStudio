@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -24,6 +25,26 @@ namespace PhotoStudio.Core
         public string SourcePath { get; set; }
         public int ActiveIndex { get; set; }
         public int JpegQuality { get; set; } = 92;
+        /// <summary>Grows each time the tab is shown: the most recently used tabs have the highest values.</summary>
+        public long LastUsed { get; set; }
+
+        /// <summary>
+        /// The copies of the photo that can go to disk, the least likely to be needed first: the history steps
+        /// farthest from the current one, then the copies the layers are compared with.
+        /// </summary>
+        public IEnumerable<FrozenPixels> FrozenBlocks()
+        {
+            int current = History.Index;
+            var entries = new List<HistoryEntry>(History.Entries);
+            var order = new List<int>();
+            for (int i = 0; i < entries.Count; i++) order.Add(i);
+            order.Sort((a, b) => Math.Abs(b - current).CompareTo(Math.Abs(a - current)));
+            foreach (int i in order)
+                foreach (var ls in entries[i].State.Layers)
+                    if (ls.Pixels != null) yield return ls.Pixels;
+            foreach (var l in Doc.Layers)
+                if (l.Snapshot != null) yield return l.Snapshot;
+        }
 
         // History steps that are "the original developed with these settings" (null settings = the original as it is).
         readonly Dictionary<HistoryEntry, RawSettings> _developed = new Dictionary<HistoryEntry, RawSettings>();

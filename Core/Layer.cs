@@ -44,8 +44,8 @@ namespace PhotoStudio.Core
         BitmapSource _thumbnail;
         byte[] _pixels;
 
-        // Immutable copy shared with the history. Never mutate it.
-        internal byte[] SnapshotPixels;
+        // Immutable copy shared with the history (in memory or on disk).
+        internal FrozenPixels Snapshot;
         // True when Pixels changed since the last snapshot.
         internal bool Dirty = true;
 
@@ -55,6 +55,14 @@ namespace PhotoStudio.Core
             Width = width;
             Height = height;
             _pixels = pixels ?? new byte[width * height * 4];
+        }
+
+        /// <summary>A layer whose pixels are only on disk (a recovered tab): they are read when it is shown.</summary>
+        internal static Layer FromFrozen(string name, int width, int height, FrozenPixels pixels)
+        {
+            var l = new Layer(name, width, height, Array.Empty<byte>()) { Snapshot = pixels, Dirty = false };
+            l._pixels = null;
+            return l;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -67,14 +75,19 @@ namespace PhotoStudio.Core
         {
             get
             {
-                var p = _pixels;
+                var p = Volatile.Read(ref _pixels);
                 if (p != null) return p;
-                // Parked (see Park): the history copy holds the same pixels.
-                p = (byte[])SnapshotPixels.Clone();
-                return Interlocked.CompareExchange(ref _pixels, p, null) ?? p;
+                // Parked (see Park): the history copy holds the same pixels. One copy, also with many threads asking.
+                lock (this) return _pixels ??= Snapshot.Copy();
             }
             set { _pixels = value; Dirty = true; }
         }
+
+        /// <summary>The pixels for reading only: a parked layer is read from the history copy and stays parked.</summary>
+        internal byte[] PixelsForReading => _pixels ?? Snapshot.Peek();
+
+        /// <summary>Bytes of the pixels in memory that only this layer holds (its working copy).</summary>
+        internal long WorkingBytes => _pixels?.LongLength ?? 0;
 
         /// <summary>
         /// Frees the pixels of a layer in a tab that is not shown when they are identical to the history copy:
@@ -83,7 +96,7 @@ namespace PhotoStudio.Core
         internal void Park()
         {
             var p = _pixels;
-            if (p == null || Dirty || SnapshotPixels == null || !p.AsSpan().SequenceEqual(SnapshotPixels)) return;
+            if (p == null || Dirty || Snapshot == null || !Snapshot.SameAs(p)) return;
             Interlocked.CompareExchange(ref _pixels, null, p);
         }
 
@@ -130,13 +143,14 @@ namespace PhotoStudio.Core
             double s = Math.Min((double)max / Width, (double)max / Height);
             int tw = Math.Max(1, (int)(Width * s)), th = Math.Max(1, (int)(Height * s));
             var buf = new byte[tw * th * 4];
+            var px = PixelsForReading;
             for (int y = 0; y < th; y++)
             {
                 int sy = Math.Min(Height - 1, (int)((y + 0.5) / s));
                 for (int x = 0; x < tw; x++)
                 {
                     int sx = Math.Min(Width - 1, (int)((x + 0.5) / s));
-                    Buffer.BlockCopy(Pixels, (sy * Width + sx) * 4, buf, (y * tw + x) * 4, 4);
+                    Buffer.BlockCopy(px, (sy * Width + sx) * 4, buf, (y * tw + x) * 4, 4);
                 }
             }
             var bmp = BitmapSource.Create(tw, th, 96, 96, PixelFormats.Bgra32, null, buf, tw * 4);

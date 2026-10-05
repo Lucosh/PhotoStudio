@@ -168,8 +168,12 @@ namespace PhotoStudio
         void OpenBatchItem(PhotoItem item)
         {
             if (item == null) return;
-            if (item.Session != null && _sessions.Contains(item.Session))
+            if (item.Session == null || !_sessions.Contains(item.Session))
+                item.Session = _sessions.FirstOrDefault(s => string.Equals(s.SourcePath, item.EditPath, StringComparison.OrdinalIgnoreCase)
+                                                             && !_batch.Any(i => i != item && i.Session == s));
+            if (item.Session != null)
             {
+                item.State = PhotoState.Open;
                 ActivateSession(item.Session);
                 return;
             }
@@ -305,7 +309,7 @@ namespace PhotoStudio
                 _export.ApplyWatermark(px, w, h);
                 ImageIO.SaveBitmap(path, w, h, px, quality, PhotoLibrary.ReadMetadata(item.EditPath));
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!Errors.IsOutOfMemory(ex))   // out of memory: the caller frees it and tries again
             {
                 return $"{Path.GetFileName(path)}: {ex.Message}";
             }
@@ -319,7 +323,14 @@ namespace PhotoStudio
             var s = item.Session;
             if (s == null || !_sessions.Contains(s)) return false;
             string error;
-            using (Busy()) error = ExportPhoto(item, s.Doc.Width, s.Doc.Height, s.Doc.Render(), dir);
+            try
+            {
+                using (Busy()) error = Errors.Retry(() => ExportPhoto(item, s.Doc.Width, s.Doc.Height, s.Doc.Render(), dir));
+            }
+            catch (Exception ex) when (Errors.IsOutOfMemory(ex))
+            {
+                error = T("{0}: memoria insufficiente. La foto non è persa: resta aperta e ne esiste una copia di sicurezza su disco. Chiudi altri programmi e riprova.", item.Name);
+            }
             if (error != null)
             {
                 MessageBox.Show(this, T("Impossibile salvare il file:\n{0}", error), T("Cartella di modifica"), MessageBoxButton.OK, MessageBoxImage.Error);
@@ -330,6 +341,7 @@ namespace PhotoStudio
             s.Modified = false;
             UpdateBatchTitle();
             SaveBatchState();
+            ScheduleBackup();
             return true;
         }
 
@@ -530,7 +542,7 @@ namespace PhotoStudio
                     }
                     try
                     {
-                        var (settings, w, h, px) = await Task.Run(() =>
+                        var (settings, w, h, px) = await Task.Run(() => Errors.Retry(() =>
                         {
                             RawImage src = null;
                             RawImage Source() => src ??= LoadSourceLinear(item.EditPath);
@@ -538,11 +550,11 @@ namespace PhotoStudio
                             if (!saveNow) return (st, 0, 0, (byte[])null);
                             var d = RawDevelop.Develop(Source(), st);
                             return (st, d.Width, d.Height, d.Pixels);
-                        });
+                        }));
                         item.Settings = settings;
                         if (saveNow)
                         {
-                            string error = ExportPhoto(item, w, h, px, dir);
+                            string error = Errors.Retry(() => ExportPhoto(item, w, h, px, dir));
                             if (error != null) r.Errors.Add(error);
                         }
                     }
@@ -559,6 +571,7 @@ namespace PhotoStudio
                 progress.Finish();
                 IsEnabled = true;
                 Activate();
+                ReleaseMemorySoon();
                 UpdateBatchTitle();
                 SaveBatchState();
             }
@@ -673,6 +686,7 @@ namespace PhotoStudio
                 progress.Finish();
                 IsEnabled = true;
                 Activate();
+                ReleaseMemorySoon();
             }
 
             var plan = new Dictionary<PhotoItem, RawSettings>();
