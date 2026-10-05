@@ -98,7 +98,11 @@ namespace PhotoStudio.Dialogs
         readonly TextBox _output;
         readonly Button _openButton;
         readonly DispatcherTimer _toastTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
-        readonly Stack<(PhotoItem Item, int Index)> _deleted = new Stack<(PhotoItem, int)>();
+        // Trash: null when the files went to the Windows Recycle Bin, otherwise where they are in our trash folder.
+        readonly Stack<(PhotoItem Item, int Index, List<(string Original, string Trashed)> Trash)> _deleted =
+            new Stack<(PhotoItem, int, List<(string, string)>)>();
+        // Photos in our trash folder (drives without the Recycle Bin): deleted for good only when the user says so.
+        readonly List<(string Original, string Trashed)> _trashed = new List<(string, string)>();
         readonly Dictionary<PhotoItem, BitmapSource> _cache = new Dictionary<PhotoItem, BitmapSource>();
         readonly Dictionary<PhotoItem, PhotoAnalysis> _analysis = new Dictionary<PhotoItem, PhotoAnalysis>();
         readonly LinkedList<PhotoItem> _lru = new LinkedList<PhotoItem>();
@@ -1045,9 +1049,18 @@ namespace PhotoStudio.Dialogs
             var item = Current;
             if (item == null) return;
             bool moved;
+            List<(string Original, string Trashed)> trash = null;
             try
             {
-                moved = PhotoLibrary.MoveToRecycleBin(item.Files, new WindowInteropHelper(this).Handle);
+                // On a memory card Windows has no Recycle Bin and would delete for good: our own trash folder instead.
+                if (PhotoLibrary.HasRecycleBin(item.EditPath))
+                    moved = PhotoLibrary.MoveToRecycleBin(item.Files, new WindowInteropHelper(this).Handle);
+                else
+                {
+                    trash = PhotoLibrary.MoveToTrash(item.Files);
+                    _trashed.AddRange(trash);
+                    moved = true;
+                }
             }
             catch (Exception ex)
             {
@@ -1056,7 +1069,7 @@ namespace PhotoStudio.Dialogs
             }
             if (!moved) return;
             int allIndex = _all.IndexOf(item);
-            _deleted.Push((item, allIndex));
+            _deleted.Push((item, allIndex, trash));
             _deletedCount++;
             _all.RemoveAt(allIndex);
             Forget(item);
@@ -1068,19 +1081,27 @@ namespace PhotoStudio.Dialogs
             if (_burstsReady) { PhotoLibrary.MarkBursts(_all); _quality.Rank(); }
             ShowCurrent();
             string files = item.Files.Count > 1 ? $" ({item.Badge})" : "";
-            Toast(T("{0}{1} spostata nel Cestino.   Ctrl+Z per ripristinarla", item.Name, files));
+            Toast(trash == null
+                ? T("{0}{1} spostata nel Cestino.   Ctrl+Z per ripristinarla", item.Name, files)
+                : T("{0}{1} eliminata.   Ctrl+Z per ripristinarla", item.Name, files));
         }
 
         void UndoDelete()
         {
             if (_deleted.Count == 0) { Toast(T("Nessuna foto da ripristinare.")); return; }
-            var (item, index) = _deleted.Peek();
+            var (item, index, trash) = _deleted.Peek();
             var failed = new List<string>();
-            foreach (var f in item.Files)
+            if (trash != null)
             {
-                try { if (!PhotoLibrary.RestoreFromRecycleBin(f)) failed.Add(f); }
-                catch { failed.Add(f); }
+                failed = PhotoLibrary.RestoreFromTrash(trash);
+                _trashed.RemoveAll(t => trash.Contains(t) && !failed.Contains(t.Original));
             }
+            else
+                foreach (var f in item.Files)
+                {
+                    try { if (!PhotoLibrary.RestoreFromRecycleBin(f)) failed.Add(f); }
+                    catch { failed.Add(f); }
+                }
             if (!File.Exists(item.EditPath))
             {
                 MessageBox.Show(this, T("Non riesco a ripristinare \"{0}\": puoi recuperarla dal Cestino di Windows.", item.Name),
@@ -1164,7 +1185,7 @@ namespace PhotoStudio.Dialogs
         {
             if (DialogResult != true && _items.Count > 0 &&
                 MessageBox.Show(this,
-                    T("Uscire dalla preselezione senza aprire le foto per la modifica?\n\nStelle ed etichette restano salvate; le foto già eliminate restano nel Cestino di Windows."),
+                    T("Uscire dalla preselezione senza aprire le foto per la modifica?\n\nStelle ed etichette restano salvate."),
                     T("Preselezione"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             {
                 e.Cancel = true;
@@ -1172,6 +1193,24 @@ namespace PhotoStudio.Dialogs
             }
             _state.LastPhoto = Current?.Name;
             _state.Save();
+            AskAboutTrash();
+        }
+
+        /// <summary>
+        /// The photos deleted from a drive without the Recycle Bin are still in the hidden folder next to them: they
+        /// are deleted for good only if the user says so.
+        /// </summary>
+        void AskAboutTrash()
+        {
+            var left = _trashed.Where(t => File.Exists(t.Trashed)).ToList();
+            if (left.Count == 0) return;
+            int photos = left.Select(t => Path.GetFileNameWithoutExtension(t.Original)).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+            string folder = Path.GetDirectoryName(left[0].Trashed);
+            var answer = MessageBox.Show(this,
+                T("Hai eliminato {0} foto da un'unità senza Cestino (scheda di memoria o chiavetta): per ora sono nella cartella nascosta\n{1}\n\nSì: eliminale definitivamente\nNo: tienile lì (potrai recuperarle o cancellarle tu)", photos, folder),
+                T("Preselezione"), MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (answer == MessageBoxResult.Yes) PhotoLibrary.EmptyTrash(left);
+            _trashed.Clear();
         }
     }
 }

@@ -549,6 +549,15 @@ namespace PhotoStudio
                 return;
             }
             if (_dragging) return;
+            // ← →: the previous / next photo of the editing folder (a slider or a list keeps its own arrows only
+            // when there is no editing folder).
+            if ((key == Key.Left || key == Key.Right) && Keyboard.Modifiers == ModifierKeys.None && _batch.Count > 0
+                && Keyboard.FocusedElement is not Slider && Keyboard.FocusedElement is not ComboBox)
+            {
+                BatchMove(key == Key.Left ? -1 : 1);
+                e.Handled = true;
+                return;
+            }
             if (HandleShortcut(key, Keyboard.Modifiers)) e.Handled = true;
         }
 

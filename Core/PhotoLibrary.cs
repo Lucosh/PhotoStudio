@@ -528,13 +528,33 @@ namespace PhotoStudio.Core
         const ushort FOF_SILENT = 0x4, FOF_NOCONFIRMATION = 0x10, FOF_ALLOWUNDO = 0x40, FOF_NOERRORUI = 0x400, FOF_WANTNUKEWARNING = 0x4000;
 
         /// <summary>
-        /// Moves files to the Windows Recycle Bin. Returns false if the user cancelled (Windows asks first when a
-        /// file cannot be recycled, e.g. on a network drive, and would be deleted permanently).
+        /// True when Windows keeps what is deleted from this path in its Recycle Bin: only the internal disks. On a
+        /// memory card, a USB stick or a network drive "deleting" is permanent, without a word.
+        /// </summary>
+        public static bool HasRecycleBin(string path)
+        {
+            try
+            {
+                string root = Path.GetPathRoot(Path.GetFullPath(path));
+                if (string.IsNullOrEmpty(root) || root.StartsWith(@"\\")) return false;
+                return new DriveInfo(root).DriveType == DriveType.Fixed;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Moves files to the Windows Recycle Bin. Returns false if the user cancelled. Refuses (IOException) a drive
+        /// without the Recycle Bin, where Windows would delete them for good: use <see cref="MoveToTrash"/> there.
         /// </summary>
         public static bool MoveToRecycleBin(IEnumerable<string> files, IntPtr owner)
         {
             var list = files.Where(File.Exists).Select(Path.GetFullPath).ToList();
             if (list.Count == 0) return true;
+            if (!list.All(HasRecycleBin))
+                throw new IOException(T("Su questa unità Windows non ha il Cestino: il file verrebbe eliminato definitivamente."));
             var op = new SHFILEOPSTRUCT
             {
                 hwnd = owner,
@@ -548,6 +568,73 @@ namespace PhotoStudio.Core
             var left = list.Where(File.Exists).ToList();
             if (left.Count > 0) throw new IOException(T("Il file è ancora presente: {0}", Path.GetFileName(left[0])));
             return true;
+        }
+
+        /// <summary>
+        /// The hidden folder, next to the photos, that takes the deleted ones on a drive without the Windows Recycle
+        /// Bin (memory card, USB stick, network): on the same drive, so moving there and back is instant.
+        /// </summary>
+        public const string TrashFolder = ".PhotoStudio - foto eliminate";
+
+        /// <summary>
+        /// Moves files into <see cref="TrashFolder"/> next to them. Returns where each one went; on an error the files
+        /// already moved go back and the error is thrown.
+        /// </summary>
+        public static List<(string Original, string Trashed)> MoveToTrash(IEnumerable<string> files)
+        {
+            var moved = new List<(string, string)>();
+            try
+            {
+                foreach (var f in files.Where(File.Exists).Select(Path.GetFullPath))
+                {
+                    string dir = Path.Combine(Path.GetDirectoryName(f), TrashFolder);
+                    var info = Directory.CreateDirectory(dir);
+                    info.Attributes |= FileAttributes.Hidden;
+                    string dest = Path.Combine(dir, Path.GetFileName(f));
+                    for (int n = 2; File.Exists(dest); n++)
+                        dest = Path.Combine(dir, $"{Path.GetFileNameWithoutExtension(f)} ({n}){Path.GetExtension(f)}");
+                    File.Move(f, dest);
+                    moved.Add((f, dest));
+                }
+                return moved;
+            }
+            catch
+            {
+                RestoreFromTrash(moved);
+                throw;
+            }
+        }
+
+        /// <summary>Puts back files moved with <see cref="MoveToTrash"/>; returns the ones that could not go back.</summary>
+        public static List<string> RestoreFromTrash(IEnumerable<(string Original, string Trashed)> moved)
+        {
+            var failed = new List<string>();
+            foreach (var (original, trashed) in moved)
+            {
+                try
+                {
+                    if (File.Exists(original) || !File.Exists(trashed)) { failed.Add(original); continue; }
+                    File.Move(trashed, original);
+                }
+                catch
+                {
+                    failed.Add(original);
+                }
+            }
+            return failed;
+        }
+
+        /// <summary>Deletes for good files moved with <see cref="MoveToTrash"/>, and the trash folder once empty.</summary>
+        public static void EmptyTrash(IEnumerable<(string Original, string Trashed)> moved)
+        {
+            var dirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (_, trashed) in moved)
+            {
+                try { File.Delete(trashed); } catch { }
+                dirs.Add(Path.GetDirectoryName(trashed));
+            }
+            foreach (var d in dirs)
+                try { if (!Directory.EnumerateFileSystemEntries(d).Any()) Directory.Delete(d); } catch { }
         }
 
         /// <summary>
