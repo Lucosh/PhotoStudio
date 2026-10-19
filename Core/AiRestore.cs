@@ -34,21 +34,33 @@ namespace PhotoStudio.Core
         /// <summary>True when the work for these settings is already done on this image, so developing it is quick.</summary>
         public static bool Ready(RawImage img, RawSettings s)
         {
-            bool dn = s.AiDenoise >= 1 && AiModels.Denoise.Installed, rf = s.AiRefocus >= 1 && AiModels.Deblur.Installed;
-            return (!dn || img.Restore.Has(img, "dn")) && (!rf || img.Restore.Has(img, dn ? "rf+dn" : "rf"));
+            var (dn, rf) = Steps(s);
+            return (!dn || img.Restore.Has(img, "dn")) && (!rf || img.Restore.Has(img, dn ? "rf+dn" : "rf2"));
+        }
+
+        /// <summary>
+        /// Which networks run. The refocus network was trained on photos without noise: on the grain of a RAW at full
+        /// size it goes wild and fills whole tiles with garbage, so it works on the denoised image whenever the noise
+        /// network is installed, even with Rumore AI at 0 (the slider then keeps the original grain).
+        /// </summary>
+        static (bool Denoise, bool Refocus) Steps(RawSettings s)
+        {
+            bool rf = s.AiRefocus >= 1 && AiModels.Deblur.Installed;
+            return ((s.AiDenoise >= 1 || rf) && AiModels.Denoise.Installed, rf);
         }
 
         /// <summary>The image the development starts from: the original mixed with what the networks made of it.</summary>
         /// <param name="ct">Stops the networks between two tiles (OperationCanceledException); nothing half done is kept.</param>
         public static RawImage Apply(RawImage img, RawSettings s, CancellationToken ct = default)
         {
-            bool dn = s.AiDenoise >= 1 && AiModels.Denoise.Installed, rf = s.AiRefocus >= 1 && AiModels.Deblur.Installed;
+            var (dn, rf) = Steps(s);
             if (!dn && !rf) return img;
             int w = img.Width, h = img.Height;
             var orig = img.Data;
             var clean = dn ? img.Restore.Get(img, "dn", AiModels.Denoise, () => Run(AiModels.Denoise, orig, w, h, Loc.T("Riduzione rumore AI"), ct)) : null;
             var basis = clean ?? orig;
-            var sharp = rf ? img.Restore.Get(img, dn ? "rf+dn" : "rf", AiModels.Deblur, () => Run(AiModels.Deblur, basis, w, h, Loc.T("Rimessa a fuoco AI"), ct)) : null;
+            // "rf" was the key of the results made before the check on wild tiles: they can be broken.
+            var sharp = rf ? img.Restore.Get(img, clean != null ? "rf+dn" : "rf2", AiModels.Deblur, () => Run(AiModels.Deblur, basis, w, h, Loc.T("Rimessa a fuoco AI"), ct)) : null;
             if (clean == null && sharp == null) return img;   // the network could not be loaded
 
             float kd = (float)(Math.Clamp(s.AiDenoise, 0, 100) / 100), kr = (float)(Math.Clamp(s.AiRefocus, 0, 150) / 100);
@@ -128,6 +140,9 @@ namespace PhotoStudio.Core
                         }
                     });
                     var result = net.Run(planes, Tile);
+                    // A network outside what it was trained on can answer with values far from 0..1 (colourful garbage):
+                    // that tile then stays as it was.
+                    if (Wild(result)) result = planes;
                     // Each tile weighs less towards its edges, so the seams between tiles do not show.
                     Parallel.For(0, Math.Min(Tile, h - ty), yy =>
                     {
@@ -178,6 +193,15 @@ namespace PhotoStudio.Core
                 list.Add(s);
             }
             return list;
+        }
+
+        /// <summary>True when more than 0.5% of the output is far outside 0..1 (a sound result stays within about -0.2..1.2).</summary>
+        static bool Wild(float[] result)
+        {
+            int far = 0;
+            foreach (float v in result)
+                if (!(v >= -0.5f && v <= 1.5f)) far++;   // NaN counts too
+            return far > result.Length / 200;
         }
 
         static float Ramp(int i, bool firstEdge, bool lastEdge)

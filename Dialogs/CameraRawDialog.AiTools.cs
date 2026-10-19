@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,10 +20,11 @@ namespace PhotoStudio.Dialogs
         {
             Section(p, T("AI SUL TUO PC"));
             Row(p, T("Rumore AI"), 0, 100, 0, x => x.AiDenoise, (x, v) => x.AiDenoise = v,
-                changed: () => EnsureModel(AiModels.Denoise, x => x.AiDenoise = 0),
+                changed: () => EnsureModel(x => x.AiDenoise = 0, AiModels.Denoise),
                 tip: T("Toglie la grana degli alti ISO con una rete neurale, conservando i dettagli meglio del cursore Luminanza"));
             Row(p, T("Messa a fuoco AI"), 0, 150, 0, x => x.AiRefocus, (x, v) => x.AiRefocus = v,
-                changed: () => EnsureModel(AiModels.Deblur, x => x.AiRefocus = 0),
+                // The refocus works on the denoised image (see AiRestore.Steps): it needs the noise network too.
+                changed: () => EnsureModel(x => x.AiRefocus = 0, AiModels.Deblur, AiModels.Denoise),
                 tip: T("Recupera la nitidezza persa per un leggero mosso o una messa a fuoco mancata"));
 
             var area = new Grid { Margin = new Thickness(0, 2, 0, 2) };
@@ -67,32 +69,39 @@ namespace PhotoStudio.Dialogs
         /// <summary>
         /// The first time a network is needed it is downloaded, after asking; without it the slider goes back to 0.
         /// </summary>
-        async void EnsureModel(AiModels.Model model, Action<RawSettings> off)
+        async void EnsureModel(Action<RawSettings> off, params AiModels.Model[] models)
         {
-            if (model.Installed || _downloading) return;
-            if (await EnsureModelAsync(model)) { Schedule(); return; }
+            if (models.All(m => m.Installed) || _downloading) return;
+            if (await EnsureModelAsync(models)) { Schedule(); return; }
             off(_s);
             RefreshSliders();
             Schedule();
         }
 
-        /// <summary>True when the network is installed, after downloading it if the user agrees.</summary>
-        async System.Threading.Tasks.Task<bool> EnsureModelAsync(AiModels.Model model)
+        /// <summary>True when the networks are installed, after downloading the missing ones if the user agrees.</summary>
+        async System.Threading.Tasks.Task<bool> EnsureModelAsync(params AiModels.Model[] models)
         {
-            if (model.Installed) return true;
+            var missing = models.Where(m => !m.Installed).ToArray();
+            if (missing.Length == 0) return true;
             if (_downloading) return false;
+            long total = missing.Sum(m => m.Size), before = 0;
             var answer = MessageBox.Show(this,
-                T("Questo strumento usa una rete neurale che va scaricata una sola volta ({0:0} MB) da GitHub.\nPoi funziona senza internet e senza inviare le foto.\n\nScaricarla adesso?", model.Size / 1048576.0),
+                T("Questo strumento usa una rete neurale che va scaricata una sola volta ({0:0} MB) da GitHub.\nPoi funziona senza internet e senza inviare le foto.\n\nScaricarla adesso?", total / 1048576.0),
                 "Camera Raw", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (answer != MessageBoxResult.Yes) return false;
 
             _downloading = true;
             _downloadCts = new CancellationTokenSource();
-            var progress = new Progress<double>(f => { if (!_closed) _status.Text = T("Download del modello AI: {0:0}%...", f * 100); });
             try
             {
-                await AiModels.DownloadAsync(model, progress, _downloadCts.Token);
-                if (_closed) return false;
+                foreach (var model in missing)
+                {
+                    long start = before, size = model.Size;
+                    var progress = new Progress<double>(f => { if (!_closed) _status.Text = T("Download del modello AI: {0:0}%...", (start + f * size) * 100 / total); });
+                    await AiModels.DownloadAsync(model, progress, _downloadCts.Token);
+                    before += size;
+                    if (_closed) return false;
+                }
                 _status.Text = T("Modello AI installato.");
                 return true;
             }
